@@ -212,11 +212,35 @@
             text-shadow: 0 2px 6px #000;
         }
 
+        #win-play {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            margin: 0;
+            padding: 14px 28px;
+            font-size: 18px;
+            background: rgba(46, 204, 113, 0.92);
+            z-index: 2;
+        }
+
         #win-skip {
             position: absolute;
-            bottom: 12px; right: 14px;
+            bottom: 10px; right: 10px;
+            margin: 0;
+            padding: 6px 14px;
             font-size: 12px;
-            color: #95a5a6;
+            font-weight: normal;
+            background: rgba(0, 0, 0, 0.55);
+            color: #ecf0f1;
+            border-radius: 14px;
+            box-shadow: none;
+            z-index: 2;
+        }
+
+        #win-skip:hover {
+            background: rgba(0, 0, 0, 0.8);
+            transform: none;
         }
 
         #level-display {
@@ -302,7 +326,8 @@
         <div id="win-video-wrap">
             <video id="win-video" playsinline muted preload="auto"></video>
             <div id="win-caption">爹地：拿去用吧</div>
-            <div id="win-skip">點一下跳過</div>
+            <button id="win-play">▶ 播放</button>
+            <button id="win-skip">跳過</button>
         </div>
 
         <!-- 結束畫面 -->
@@ -560,6 +585,8 @@
 
         // ===== 三關全過的慶祝影片 =====
         let winVideoURL = null;
+        const winPlayBtn = document.getElementById('win-play');
+        const winSkipBtn = document.getElementById('win-skip');
 
         function playWinVideo() {
             let done = false;
@@ -572,30 +599,38 @@
                 if (why) console.log('[win-video] 結束原因:', why);
                 try { winVideo.pause(); } catch (e) {}
                 winWrap.style.display = 'none';
+                winPlayBtn.style.display = 'none';
                 finish('clear');
             };
 
-            winWrap.style.display = 'flex';
-            winWrap.onclick = () => goNext('玩家點擊跳過');
-            winVideo.onended = () => goNext('播放完畢');
-            winVideo.onerror = () => {
-                console.log('[win-video] 載入錯誤',
-                            winVideo.error && winVideo.error.code);
-                goNext('載入錯誤');
+            const armWatchdog = () => {
+                clearTimeout(watchdog);
+                const dur = isFinite(winVideo.duration) && winVideo.duration > 0
+                          ? winVideo.duration : 3;
+                watchdog = setTimeout(() => goNext('看門狗逾時'), (dur + 3) * 1000);
             };
 
+            winWrap.style.display = 'flex';
+            winPlayBtn.style.display = 'none';
+            winWrap.onclick = null;                        // 整層不再吃點擊
+            winSkipBtn.onclick = (e) => { e.stopPropagation(); goNext('玩家跳過'); };
+            winPlayBtn.onclick = (e) => {                  // 手動播放
+                e.stopPropagation();
+                winPlayBtn.style.display = 'none';
+                winVideo.play().then(armWatchdog).catch(() => goNext('手動播放失敗'));
+            };
+
+            winVideo.onended = () => goNext('播放完畢');
+            winVideo.onerror = () => goNext('載入錯誤');
+
+            // 全程靜音。手機上解除靜音會被系統中斷播放，2.4 秒的畫面不需要聲音。
             winVideo.muted = true;
             winVideo.playsInline = true;
+            winVideo.controls = false;
 
-            // 第一次播放時才建立 Blob URL，之後重複使用
             if (!winVideoURL) {
-                try {
-                    winVideoURL = makeVideoURL();
-                } catch (e) {
-                    console.log('[win-video] Blob 建立失敗', e);
-                    goNext('Blob 建立失敗');
-                    return;
-                }
+                try { winVideoURL = makeVideoURL(); }
+                catch (e) { goNext('Blob 建立失敗'); return; }
             }
             if (winVideo.src !== winVideoURL) winVideo.src = winVideoURL;
 
@@ -605,17 +640,15 @@
                 const pr = winVideo.play();
                 if (pr && pr.then) {
                     pr.then(() => {
-                        console.log('[win-video] 開始播放');
-                        winVideo.muted = false;
-                        if (winVideo.paused) winVideo.muted = true;
+                        console.log('[win-video] 自動播放成功');
+                        armWatchdog();
                     }).catch((e) => {
-                        console.log('[win-video] play() 被拒', e && e.name);
-                        winVideo.controls = true;   // 讓玩家自己按
+                        console.log('[win-video] 自動播放被拒', e && e.name);
+                        winPlayBtn.style.display = 'block';   // 等玩家按播放，不設看門狗
                     });
+                } else {
+                    armWatchdog();
                 }
-                const dur = isFinite(winVideo.duration) && winVideo.duration > 0
-                          ? winVideo.duration : 3;
-                watchdog = setTimeout(() => goNext('看門狗逾時'), (dur + 3) * 1000);
             };
 
             if (winVideo.readyState >= 2) {
@@ -623,7 +656,8 @@
             } else {
                 winVideo.addEventListener('loadeddata', start, { once: true });
                 winVideo.load();
-                setTimeout(() => { if (!done && winVideo.paused) start(); }, 1500);
+                setTimeout(() => { if (!done && winVideo.paused &&
+                    winPlayBtn.style.display === 'none') start(); }, 1500);
             }
         }
 
