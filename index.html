@@ -238,9 +238,36 @@
             z-index: 2;
         }
 
+        #win-status {
+            position: absolute;
+            top: 8px; left: 8px; right: 8px;
+            font-size: 11px;
+            line-height: 1.5;
+            color: #7fdba0;
+            text-align: left;
+            white-space: pre-wrap;
+            z-index: 3;
+            text-shadow: 0 1px 2px #000;
+        }
+
         #win-skip:hover {
             background: rgba(0, 0, 0, 0.8);
             transform: none;
+        }
+
+        #replay-btn {
+            display: none;
+            background: #8e44ad;
+            box-shadow: 0 4px 15px rgba(142, 68, 173, 0.4);
+            margin-top: 14px;
+        }
+
+        #replay-btn:hover {
+            background: #7d3c98;
+        }
+
+        #restart-btn {
+            margin-top: 10px;
         }
 
         #level-display {
@@ -328,12 +355,14 @@
             <div id="win-caption">爹地：拿去用吧</div>
             <button id="win-play">▶ 播放</button>
             <button id="win-skip">跳過</button>
+            <div id="win-status"></div>
         </div>
 
         <!-- 結束畫面 -->
         <div id="game-over-screen">
             <h2>遊戲結束！</h2>
             <p id="final-score" style="font-size: 24px; color: #f1c40f;"></p>
+            <button id="replay-btn">🎬 看一次爹地的英姿</button>
             <button id="restart-btn">再挑戰一次</button>
         </div>
     </div>
@@ -411,6 +440,7 @@
         const startBtn     = document.getElementById('start-btn');
         const levelBtn     = document.getElementById('level-btn');
         const restartBtn   = document.getElementById('restart-btn');
+        const replayBtn    = document.getElementById('replay-btn');
         const finalScore   = document.getElementById('final-score');
         const levelTitle   = document.getElementById('level-title');
         const levelBody    = document.getElementById('level-body');
@@ -580,6 +610,7 @@
                     `<span style="font-size:17px;color:#bdc3c7">${rank}</span>`;
                 finalScore.style.color = '#f1c40f';
             }
+            replayBtn.style.display = (reason === 'clear') ? 'block' : 'none';
             gameOverScreen.style.display = 'flex';
         }
 
@@ -587,68 +618,93 @@
         let winVideoURL = null;
         const winPlayBtn = document.getElementById('win-play');
         const winSkipBtn = document.getElementById('win-skip');
+        const winStatus  = document.getElementById('win-status');
 
-        function playWinVideo() {
+        function playWinVideo(after) {
             let done = false;
             let watchdog = null;
+            let log = '';
 
+            const say = (msg, show) => {
+                log += msg + '\n';
+                if (show) winStatus.innerText = log;   // 只有出錯才顯示在畫面上
+                console.log('[win-video]', msg);
+            };
+
+            // 只有「播完」「玩家按跳過」才會離開，其餘狀況一律留在畫面上
             const goNext = (why) => {
                 if (done) return;
                 done = true;
                 clearTimeout(watchdog);
-                if (why) console.log('[win-video] 結束原因:', why);
                 try { winVideo.pause(); } catch (e) {}
                 winWrap.style.display = 'none';
                 winPlayBtn.style.display = 'none';
-                finish('clear');
+                winStatus.innerText = '';
+                (after || (() => finish('clear')))();
+            };
+
+            const fail = (why) => {                 // 出錯：不跳過，顯示原因等玩家處理
+                say('✖ ' + why, true);
+                winPlayBtn.style.display = 'block';
+                clearTimeout(watchdog);
             };
 
             const armWatchdog = () => {
                 clearTimeout(watchdog);
                 const dur = isFinite(winVideo.duration) && winVideo.duration > 0
                           ? winVideo.duration : 3;
-                watchdog = setTimeout(() => goNext('看門狗逾時'), (dur + 3) * 1000);
+                watchdog = setTimeout(() => goNext('逾時'), (dur + 3) * 1000);
             };
 
+            winStatus.innerText = '';
             winWrap.style.display = 'flex';
             winPlayBtn.style.display = 'none';
-            winWrap.onclick = null;                        // 整層不再吃點擊
-            winSkipBtn.onclick = (e) => { e.stopPropagation(); goNext('玩家跳過'); };
-            winPlayBtn.onclick = (e) => {                  // 手動播放
+            winWrap.onclick = null;
+            winSkipBtn.onclick = (e) => { e.stopPropagation(); goNext('跳過'); };
+            winPlayBtn.onclick = (e) => {
                 e.stopPropagation();
                 winPlayBtn.style.display = 'none';
-                winVideo.play().then(armWatchdog).catch(() => goNext('手動播放失敗'));
+                say('手動播放…');
+                winVideo.play().then(() => { say('✔ 播放中'); armWatchdog(); })
+                               .catch((er) => fail('手動播放失敗 ' + (er && er.name)));
             };
 
-            winVideo.onended = () => goNext('播放完畢');
-            winVideo.onerror = () => goNext('載入錯誤');
+            winVideo.onended = () => goNext('播完');
+            winVideo.onerror = () => {
+                const c = winVideo.error ? winVideo.error.code : '?';
+                fail('影片載入錯誤 code=' + c);
+            };
+            winVideo.onstalled = () => say('· stalled');
+            winVideo.onloadeddata = () => say('· loadeddata ok');
 
-            // 全程靜音。手機上解除靜音會被系統中斷播放，2.4 秒的畫面不需要聲音。
             winVideo.muted = true;
             winVideo.playsInline = true;
             winVideo.controls = false;
 
+            say('base64 長度 ' + WIN_VIDEO_B64.length);
             if (!winVideoURL) {
-                try { winVideoURL = makeVideoURL(); }
-                catch (e) { goNext('Blob 建立失敗'); return; }
+                try {
+                    winVideoURL = makeVideoURL();
+                    say('· Blob URL 建立成功');
+                } catch (e) {
+                    fail('Blob 建立失敗 ' + e);
+                    return;
+                }
             }
             if (winVideo.src !== winVideoURL) winVideo.src = winVideoURL;
 
             const start = () => {
                 if (done) return;
+                say('· readyState=' + winVideo.readyState);
                 try { winVideo.currentTime = 0; } catch (e) {}
                 const pr = winVideo.play();
                 if (pr && pr.then) {
-                    pr.then(() => {
-                        console.log('[win-video] 自動播放成功');
-                        armWatchdog();
-                    }).catch((e) => {
-                        console.log('[win-video] 自動播放被拒', e && e.name);
-                        winPlayBtn.style.display = 'block';   // 等玩家按播放，不設看門狗
-                    });
-                } else {
-                    armWatchdog();
-                }
+                    pr.then(() => { say('✔ 自動播放成功'); armWatchdog(); })
+                      .catch((e) => {
+                          say('自動播放被拒 ' + (e && e.name) + '，請按播放');
+                          winPlayBtn.style.display = 'block';
+                      });
+                } else { armWatchdog(); }
             };
 
             if (winVideo.readyState >= 2) {
@@ -656,8 +712,12 @@
             } else {
                 winVideo.addEventListener('loadeddata', start, { once: true });
                 winVideo.load();
-                setTimeout(() => { if (!done && winVideo.paused &&
-                    winPlayBtn.style.display === 'none') start(); }, 1500);
+                setTimeout(() => {
+                    if (!done && winVideo.paused && winPlayBtn.style.display === 'none') {
+                        say('· 1.5s 後仍未就緒，強制嘗試');
+                        start();
+                    }
+                }, 1500);
             }
         }
 
@@ -771,6 +831,10 @@
         }
         startBtn.addEventListener('click', newGame);
         restartBtn.addEventListener('click', newGame);
+        replayBtn.addEventListener('click', () => {
+            gameOverScreen.style.display = 'none';
+            playWinVideo(() => { gameOverScreen.style.display = 'flex'; });
+        });
         levelBtn.addEventListener('click', startLevel);
     </script>
 </body>
