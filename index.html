@@ -356,7 +356,7 @@
         /* ── 巨型藥盒 ── */
         .mega-pill {
             position: absolute;
-            width: 320px;
+            width: 200px;   /* 400 * 1/2 */
             height: 140px;
             background-image: url('assets/pill.png');
             background-size: 100% 100%;
@@ -813,7 +813,7 @@
             megaCooldown = true;
 
             const lv     = LEVELS[levelIdx];
-            const pw     = 320;                    // 藥盒寬度
+            const pw     = 200;                    // 藥盒寬度（容器 1/2）
             // 隨機水平位置：左邊最多從 0 開始，右邊最多讓右緣貼齊容器
             const startX = Math.random() * (containerWidth - pw);
             let topPos   = 120;  // 從爹地正下方開始往下掉
