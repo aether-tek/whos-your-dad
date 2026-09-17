@@ -306,6 +306,44 @@
             margin-top: 15px;
             line-height: 1.6;
         }
+
+        /* ── Combo 閃字 ── */
+        #combo-flash {
+            position: absolute;
+            top: 38%; left: 0; right: 0;
+            text-align: center;
+            font-size: 36px;
+            font-weight: 900;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 30;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+        }
+        @keyframes comboPop {
+            0%   { opacity: 1; transform: scale(1.4); }
+            60%  { opacity: 1; transform: scale(1.0); }
+            100% { opacity: 0; transform: scale(0.85) translateY(-18px); }
+        }
+        #combo-flash.pop { animation: comboPop 0.7s ease-out forwards; }
+
+        /* ── 道具：剪刀 / 刮鬍刀 ── */
+        .tool {
+            width: 52px; height: 52px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 30px;
+            filter: drop-shadow(1px 2px 4px rgba(0,0,0,0.5));
+        }
+
+        /* ── 金色鈔票 ── */
+        .gold-bill {
+            width: 68px; height: 29px;
+            background-size: contain; background-repeat: no-repeat; background-position: center;
+            filter: drop-shadow(0 0 6px #ffd700) drop-shadow(0 0 12px #ff9900);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; font-weight: bold; font-family: Arial, sans-serif;
+            color: #ffe600; -webkit-text-stroke: 1px #8B6000;
+            text-shadow: 0 0 4px #ffd700, 1px 1px 2px #000;
+        }
     </style>
 </head>
 <body>
@@ -318,6 +356,9 @@
             <div id="hair-display">髮量 1/9</div>
             <div id="time-display">30s</div>
         </div>
+
+        <!-- Combo 閃字 -->
+        <div id="combo-flash"></div>
 
         <!-- 小鈔遮擋層 -->
         <div id="splash"></div>
@@ -393,17 +434,17 @@
         const LEVELS = [
             { name: '關卡一 · 隨手給幾張', time: 30, target: 300,
               pill: 0.15, spawn: 380, bossMove: 400, speedBase: 3,
-              drift: 0,   speedMul: 1,   junk: false,
+              drift: 0,   speedMul: 1,   junk: false, gold: 0,    tool: 0.04,
               tip: '全部垂直落下，穩穩接就好' },
             { name: '關卡二 · 爹地心情好', time: 30, target: 700,
               pill: 0.25, spawn: 300, bossMove: 250, speedBase: 4,
-              drift: 1.8, speedMul: 1,   junk: false,
+              drift: 1.8, speedMul: 1,   junk: false, gold: 0.04, tool: 0.05,
               tip: '錢和藥盒都會走斜線，落點會偏' },
             // 【暫時調低，方便測試結尾動畫】原設定：
             // time: 25, target: 1200, pill: 0.35, bossMove: 150, drift: 3.0, speedMul: 1.35
             { name: '關卡三 · 天女散花', time: 30, target: 400,
               pill: 0.18, spawn: 260, bossMove: 260, speedBase: 4,
-              drift: 2.0, speedMul: 1.0, junk: true,
+              drift: 2.0, speedMul: 1.0, junk: true,  gold: 0.07, tool: 0.06,
               tip: '斜線更斜、掉得更快，小鈔還會糊你一臉' }
         ];
         // 播放結尾影片的關卡（最後一關）。測試時可暫時改成 0 = 第一關就播
@@ -451,7 +492,29 @@
         const basketWidth = 70;
         const bossWidth = 109;
 
-        function fmtMoney(v) { return (v < 0 ? '-$' : '$') + Math.abs(v); }
+        let combo = 0;
+        let comboMax = 5;
+
+        function resetCombo() { combo = 0; }
+
+        function addCombo() {
+            combo = Math.min(combo + 1, comboMax);
+            if (combo >= 2) showComboFlash();
+        }
+
+        function showComboFlash() {
+            const el = document.getElementById('combo-flash'); if (!el) return;
+            const colors = ['','','#f1c40f','#e67e22','#e74c3c','#8e44ad'];
+            el.innerText = `× ${Math.min(combo, comboMax)} COMBO！`;
+            el.style.color = colors[Math.min(combo, comboMax)] || '#fff';
+            el.classList.remove('pop');
+            void el.offsetWidth;
+            el.classList.add('pop');
+        }
+
+        function comboMultiplier() { return Math.min(combo, comboMax); }
+
+                function fmtMoney(v) { return (v < 0 ? '-$' : '$') + Math.abs(v); }
 
         function updateScore() {
             const lv = LEVELS[levelIdx];
@@ -510,6 +573,7 @@
             timeLeft = lv.time;
             isPlaying = true;
             overdose = false;
+            resetCombo();
             hideSplash();
             clearItems();
             setHair(hairLevel);        // 髮量沿用，不重置
@@ -594,9 +658,10 @@
                            : hairLevel <= 7 ? '拚命三郎 —— 這錢賺得有點傷'
                            : '以健康換錢 —— 爹地很滿意，你的頭皮不滿意';
                 h2.innerText = '🎉 三關全過！';
+                const topMul = Math.min(combo, comboMax) || 1;
                 finalScore.innerHTML =
                     `總小費 <span style="color:#f1c40f">${fmtMoney(total)}</span><br>` +
-                    `最終髮量 ${hairLevel + 1}/9<br>` +
+                    `最終髮量 ${hairLevel + 1}/9　最高連擊 ×${comboMax}<br>` +
                     `<span style="font-size:17px;color:#bdc3c7">${rank}</span>`;
                 finalScore.style.color = '#f1c40f';
             }
@@ -721,20 +786,44 @@
             let type, value = 0;
             let speed = (Math.random() * 3 + lv.speedBase) * lv.speedMul;
 
-            if (rand < lv.pill) {
+            // 機率累加：藥盒 → 道具 → 金色鈔票 → 干擾小鈔 → 一般鈔票
+            const p_pill = lv.pill;
+            const p_tool = p_pill + lv.tool;
+            const p_gold = p_tool + lv.gold;
+            const p_junk = p_gold + (lv.junk ? 0.25 : 0);
+
+            if (rand < p_pill) {
                 item.classList.add('pill-box');
                 type = 'pill';
                 speed += 1;
-            } else if (lv.junk && rand < lv.pill + 0.30) {
-                // 關卡三的小面額干擾鈔
+
+            } else if (rand < p_tool) {
+                // 剪刀 or 刮鬍刀（各 50%）
+                const isSci = Math.random() < 0.5;
+                item.classList.add('tool');
+                item.innerText = isSci ? '✂️' : '🪒';
+                type = 'tool';
+                speed -= 0.5;   // 道具掉慢一點，給你機會去搶
+
+            } else if (rand < p_gold) {
+                // 金色鈔票 $500
+                item.classList.add('gold-bill');
+                item.style.backgroundImage = `url('${BILLS['100']}')`;
+                item.innerText = '💰$500';
+                type = 'gold';
+                value = 500;
+                speed += 4;     // 快，要搶
+
+            } else if (lv.junk && rand < p_junk) {
                 const j = JUNK[Math.floor(Math.random() * JUNK.length)];
                 item.classList.add('bill');
                 item.style.backgroundImage = `url('${BILLS[j.bill]}')`;
                 item.innerText = '$' + j.bill;
                 type = 'junk';
                 value = j.value;
+
             } else {
-                const r2 = (rand - lv.pill) / (1 - lv.pill);
+                const r2 = (rand - p_junk) / (1 - p_junk) || Math.random();
                 let amt;
                 if (r2 < 0.55)      { amt = '10';  }
                 else if (r2 < 0.85) { amt = '50';  speed += 1; }
@@ -779,6 +868,7 @@
                     r.right >= b.left && r.left <= b.right) {
                     if (type === 'pill') {
                         score -= 50;
+                        resetCombo();
                         if (hairLevel >= 8) {
                             overdose = true;
                             updateScore();
@@ -787,16 +877,34 @@
                             return;
                         }
                         setHair(hairLevel + 1);
-                    } else {
+
+                    } else if (type === 'tool') {
+                        // 剪刀 / 刮鬍刀：髮量 -1（最低 0）
+                        if (hairLevel > 0) setHair(hairLevel - 1);
+                        // 道具不加分、不算連擊、不中斷連擊
+
+                    } else if (type === 'gold') {
+                        const mul = comboMultiplier() || 1;
+                        score += value * mul;
+                        addCombo();
+
+                    } else if (type === 'junk') {
                         score += value;
-                        if (type === 'junk') showSplash();
+                        resetCombo();   // 小鈔中斷連擊
+                        showSplash();
+
+                    } else {
+                        // 一般鈔票
+                        const mul = comboMultiplier() || 1;
+                        score += value * mul;
+                        addCombo();
                     }
                     updateScore();
                     item.remove();
                     return;
                 }
 
-                if (topPos > 600) item.remove();
+                if (topPos > 600) { if (type !== 'pill' && type !== 'tool') resetCombo(); item.remove(); }
                 else requestAnimationFrame(fall);
             }
             requestAnimationFrame(fall);
