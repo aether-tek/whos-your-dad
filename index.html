@@ -814,28 +814,34 @@
 
             const lv     = LEVELS[levelIdx];
             const pw     = 320;                    // 藥盒寬度
-            const fromLeft = Math.random() < 0.5;  // 隨機決定方向
-            const startX  = fromLeft ? -pw : containerWidth;
-            const endX    = fromLeft ? containerWidth : -pw;
-            const topPos  = 140 + Math.random() * 60;  // 稍低於爹地，避開手勢
+            // 隨機水平位置：左邊最多從 0 開始，右邊最多讓右緣貼齊容器
+            const startX = Math.random() * (containerWidth - pw);
+            let topPos   = 120;  // 從爹地正下方開始往下掉
+            // 速度比一般藥盒慢（壓迫感，但還有機會閃）
+            const speed  = lv.speedBase * lv.speedMul * 0.65;
+            // 左右搖擺幅度依關卡設定（與一般掉落物一致）
+            let megaX   = startX;
+            let megaDrift = lv.drift > 0
+                ? (Math.random() < 0.5 ? -1 : 1) * lv.drift * 0.8
+                : 0;
 
             const item = document.createElement('div');
             item.classList.add('mega-pill');
             item.style.top  = topPos + 'px';
-            item.style.left = startX + 'px';
+            item.style.left = megaX + 'px';
             container.appendChild(item);
-
-            // 橫掃速度：比一般藥盒慢，3-4 秒掃過全場
-            const duration = 3200 + Math.random() * 800;  // ms
-            const fps = 60;
-            const totalFrames = duration / (1000 / fps);
-            const dx = (endX - startX) / totalFrames;
-            let x = startX;
 
             function sweep() {
                 if (!isPlaying) { item.remove(); megaCooldown = false; return; }
-                x += dx;
-                item.style.left = x + 'px';
+                topPos += speed;
+                item.style.top = topPos + 'px';
+                // 左右搖擺，碰牆反彈
+                if (megaDrift !== 0) {
+                    megaX += megaDrift;
+                    if (megaX < 0) { megaX = 0; megaDrift = -megaDrift; }
+                    else if (megaX + pw > containerWidth) { megaX = containerWidth - pw; megaDrift = -megaDrift; }
+                    item.style.left = megaX + 'px';
+                }
 
                 // 碰撞偵測
                 const b = basket.getBoundingClientRect();
@@ -866,10 +872,10 @@
                     return;
                 }
 
-                // 離開畫面
-                if ((fromLeft && x > containerWidth) || (!fromLeft && x < -pw)) {
+                // 離開畫面（底部）
+                if (topPos > 620) {
                     item.remove();
-                    setTimeout(() => { megaCooldown = false; }, 2000);
+                    setTimeout(() => { megaCooldown = false; }, 1500);
                     return;
                 }
                 requestAnimationFrame(sweep);
