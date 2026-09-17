@@ -356,20 +356,13 @@
         /* ── 巨型藥盒 ── */
         .mega-pill {
             position: absolute;
-            width: 267px;          /* 400 * 2/3 */
-            height: 80px;
+            width: 320px;
+            height: 140px;
             background-image: url('assets/pill.png');
-            background-size: contain;
+            background-size: 100% 100%;
             background-repeat: no-repeat;
             background-position: center;
             z-index: 12;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            font-weight: bold;
-            color: #fff;
-            text-shadow: 0 2px 6px #000;
             filter: drop-shadow(0 0 10px #e74c3c) drop-shadow(0 0 20px #c0392b);
         }
         @keyframes megaWarn {
@@ -820,7 +813,7 @@
             megaCooldown = true;
 
             const lv     = LEVELS[levelIdx];
-            const pw     = 267;                    // 藥盒寬度（容器 2/3）
+            const pw     = 320;                    // 藥盒寬度
             const fromLeft = Math.random() < 0.5;  // 隨機決定方向
             const startX  = fromLeft ? -pw : containerWidth;
             const endX    = fromLeft ? containerWidth : -pw;
@@ -828,7 +821,6 @@
 
             const item = document.createElement('div');
             item.classList.add('mega-pill');
-            item.innerText = '⚠️ 巨型適尿通';
             item.style.top  = topPos + 'px';
             item.style.left = startX + 'px';
             container.appendChild(item);
