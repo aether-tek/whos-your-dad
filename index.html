@@ -344,6 +344,14 @@
             color: #ffe600; -webkit-text-stroke: 1px #8B6000;
             text-shadow: 0 0 4px #ffd700, 1px 1px 2px #000;
         }
+
+        @keyframes toolShake {
+            0%,100% { transform: rotate(-12deg) scale(1.1); }
+            25%      { transform: rotate(12deg)  scale(1.2); }
+            50%      { transform: rotate(-8deg)  scale(1.1); }
+            75%      { transform: rotate(8deg)   scale(1.15); }
+        }
+        .tool { animation: toolShake 0.3s linear infinite; }
     </style>
 </head>
 <body>
@@ -439,13 +447,13 @@
             { name: '關卡二 · 爹地心情好', time: 30, target: 700,
               pill: 0.25, spawn: 300, bossMove: 250, speedBase: 4,
               drift: 1.8, speedMul: 1,   junk: false, gold: 0.04, tool: 0.05,
-              tip: '錢和藥盒都會走斜線，落點會偏' },
+              tip: '連擊越高，藥盒越多越快，小心別斷' },
             // 【暫時調低，方便測試結尾動畫】原設定：
             // time: 25, target: 1200, pill: 0.35, bossMove: 150, drift: 3.0, speedMul: 1.35
             { name: '關卡三 · 天女散花', time: 30, target: 400,
               pill: 0.18, spawn: 260, bossMove: 260, speedBase: 4,
               drift: 2.0, speedMul: 1.0, junk: true,  gold: 0.07, tool: 0.06,
-              tip: '斜線更斜、掉得更快，小鈔還會糊你一臉' }
+              tip: '連擊拉越高，藥盒就越瘋，背水一戰' }
         ];
         // 播放結尾影片的關卡（最後一關）。測試時可暫時改成 0 = 第一關就播
         const WIN_AFTER_LEVEL = LEVELS.length - 1;
@@ -493,26 +501,30 @@
         const bossWidth = 109;
 
         let combo = 0;
-        let comboMax = 5;
-
         function resetCombo() { combo = 0; }
 
         function addCombo() {
-            combo = Math.min(combo + 1, comboMax);
+            combo += 1;
             if (combo >= 2) showComboFlash();
         }
 
         function showComboFlash() {
             const el = document.getElementById('combo-flash'); if (!el) return;
-            const colors = ['','','#f1c40f','#e67e22','#e74c3c','#8e44ad'];
-            el.innerText = `× ${Math.min(combo, comboMax)} COMBO！`;
-            el.style.color = colors[Math.min(combo, comboMax)] || '#fff';
+            const c = combo;
+            const color = c >= 10 ? '#ff00ff'
+                        : c >= 7  ? '#8e44ad'
+                        : c >= 5  ? '#e74c3c'
+                        : c >= 3  ? '#e67e22'
+                        :           '#f1c40f';
+            el.innerText = `× ${c} COMBO！`;
+            el.style.color = color;
             el.classList.remove('pop');
             void el.offsetWidth;
             el.classList.add('pop');
         }
 
-        function comboMultiplier() { return Math.min(combo, comboMax); }
+        // combo=0,1 → ×1；combo=2 → ×2；combo=3 → ×3 …無上限
+        function comboMultiplier() { return combo >= 2 ? combo : 1; }
 
                 function fmtMoney(v) { return (v < 0 ? '-$' : '$') + Math.abs(v); }
 
@@ -658,10 +670,9 @@
                            : hairLevel <= 7 ? '拚命三郎 —— 這錢賺得有點傷'
                            : '以健康換錢 —— 爹地很滿意，你的頭皮不滿意';
                 h2.innerText = '🎉 三關全過！';
-                const topMul = Math.min(combo, comboMax) || 1;
                 finalScore.innerHTML =
                     `總小費 <span style="color:#f1c40f">${fmtMoney(total)}</span><br>` +
-                    `最終髮量 ${hairLevel + 1}/9　最高連擊 ×${comboMax}<br>` +
+                    `最終髮量 ${hairLevel + 1}/9<br>` +
                     `<span style="font-size:17px;color:#bdc3c7">${rank}</span>`;
                 finalScore.style.color = '#f1c40f';
             }
@@ -787,7 +798,10 @@
             let speed = (Math.random() * 3 + lv.speedBase) * lv.speedMul;
 
             // 機率累加：藥盒 → 道具 → 金色鈔票 → 干擾小鈔 → 一般鈔票
-            const p_pill = lv.pill;
+            // 藥盒機率和速度隨連擊等比增加
+            const comboPillMul = 1 + combo * 0.08;
+            const comboPillSpd = combo * 0.3;
+            const p_pill = Math.min(lv.pill * comboPillMul, 0.65);  // 最高 65%
             const p_tool = p_pill + lv.tool;
             const p_gold = p_tool + lv.gold;
             const p_junk = p_gold + (lv.junk ? 0.25 : 0);
@@ -795,7 +809,7 @@
             if (rand < p_pill) {
                 item.classList.add('pill-box');
                 type = 'pill';
-                speed += 1;
+                speed += 1 + comboPillSpd;
 
             } else if (rand < p_tool) {
                 // 剪刀 or 刮鬍刀（各 50%）
@@ -803,7 +817,7 @@
                 item.classList.add('tool');
                 item.innerText = isSci ? '✂️' : '🪒';
                 type = 'tool';
-                speed -= 0.5;   // 道具掉慢一點，給你機會去搶
+                speed += 6;     // 非常快，比金鈔還快1格，要刻意搶
 
             } else if (rand < p_gold) {
                 // 金色鈔票 $500
@@ -812,7 +826,7 @@
                 item.innerText = '💰$500';
                 type = 'gold';
                 value = 500;
-                speed += 4;     // 快，要搶
+                speed += 5;     // 快
 
             } else if (lv.junk && rand < p_junk) {
                 const j = JUNK[Math.floor(Math.random() * JUNK.length)];
@@ -884,7 +898,7 @@
                         // 道具不加分、不算連擊、不中斷連擊
 
                     } else if (type === 'gold') {
-                        const mul = comboMultiplier() || 1;
+                        const mul = comboMultiplier();
                         score += value * mul;
                         addCombo();
 
@@ -895,7 +909,7 @@
 
                     } else {
                         // 一般鈔票
-                        const mul = comboMultiplier() || 1;
+                        const mul = comboMultiplier();
                         score += value * mul;
                         addCombo();
                     }
