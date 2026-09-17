@@ -352,6 +352,31 @@
             75%      { transform: rotate(8deg)   scale(1.15); }
         }
         .tool { animation: toolShake 0.3s linear infinite; }
+
+        /* ── 巨型藥盒 ── */
+        .mega-pill {
+            position: absolute;
+            width: 267px;          /* 400 * 2/3 */
+            height: 80px;
+            background-image: url('assets/pill.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            z-index: 12;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 2px 6px #000;
+            filter: drop-shadow(0 0 10px #e74c3c) drop-shadow(0 0 20px #c0392b);
+        }
+        @keyframes megaWarn {
+            0%,100% { filter: drop-shadow(0 0 10px #e74c3c) drop-shadow(0 0 20px #c0392b); }
+            50%      { filter: drop-shadow(0 0 20px #ff0000) drop-shadow(0 0 40px #ff6600) brightness(1.2); }
+        }
+        .mega-pill { animation: megaWarn 0.6s ease-in-out infinite; }
     </style>
 </head>
 <body>
@@ -584,6 +609,7 @@
             isPlaying = true;
             overdose = false;
             resetCombo();
+            megaCooldown = false;
             hideSplash();
             clearItems();
             setHair(hairLevel);        // 髮量沿用，不重置
@@ -785,8 +811,88 @@
         }
 
         // ===== 掉落物 =====
+
+        // ── 巨型藥盒（橫掃式）──
+        let megaCooldown = false;   // 同時只允許一顆
+
+        function spawnMegaPill() {
+            if (!isPlaying || megaCooldown) return;
+            megaCooldown = true;
+
+            const lv     = LEVELS[levelIdx];
+            const pw     = 267;                    // 藥盒寬度（容器 2/3）
+            const fromLeft = Math.random() < 0.5;  // 隨機決定方向
+            const startX  = fromLeft ? -pw : containerWidth;
+            const endX    = fromLeft ? containerWidth : -pw;
+            const topPos  = 140 + Math.random() * 60;  // 稍低於爹地，避開手勢
+
+            const item = document.createElement('div');
+            item.classList.add('mega-pill');
+            item.innerText = '⚠️ 巨型適尿通';
+            item.style.top  = topPos + 'px';
+            item.style.left = startX + 'px';
+            container.appendChild(item);
+
+            // 橫掃速度：比一般藥盒慢，3-4 秒掃過全場
+            const duration = 3200 + Math.random() * 800;  // ms
+            const fps = 60;
+            const totalFrames = duration / (1000 / fps);
+            const dx = (endX - startX) / totalFrames;
+            let x = startX;
+
+            function sweep() {
+                if (!isPlaying) { item.remove(); megaCooldown = false; return; }
+                x += dx;
+                item.style.left = x + 'px';
+
+                // 碰撞偵測
+                const b = basket.getBoundingClientRect();
+                const r = item.getBoundingClientRect();
+                if (r.bottom >= b.top && r.top <= b.bottom &&
+                    r.right  >= b.left && r.left <= b.right) {
+                    // 命中：扣分 + combo歸零 + 髮量 +2
+                    score -= 50;
+                    resetCombo();
+                    const newHair = Math.min(hairLevel + 2, 8);
+                    if (hairLevel >= 8) {
+                        // 髮量已是 9/9 → 直接過量
+                        overdose = true;
+                        updateScore();
+                        item.remove();
+                        megaCooldown = false;
+                        finish('overdose');
+                        return;
+                    }
+                    setHair(newHair);
+                    if (newHair >= 8) {
+                        // 剛好升到 9/9，下一顆普通藥盒就死
+                    }
+                    updateScore();
+                    item.remove();
+                    // 命中後冷卻 4 秒
+                    setTimeout(() => { megaCooldown = false; }, 4000);
+                    return;
+                }
+
+                // 離開畫面
+                if ((fromLeft && x > containerWidth) || (!fromLeft && x < -pw)) {
+                    item.remove();
+                    setTimeout(() => { megaCooldown = false; }, 2000);
+                    return;
+                }
+                requestAnimationFrame(sweep);
+            }
+            requestAnimationFrame(sweep);
+        }
+
         function spawnItem() {
             if (!isPlaying) return;
+            // 巨型藥盒：分數達到當關目標 50% 後，每次生成有 8% 機率橫掃
+            if (!megaCooldown && score >= LEVELS[levelIdx].target * 0.5
+                && Math.random() < 0.08) {
+                spawnMegaPill(); return;
+            }
+
             const lv = LEVELS[levelIdx];
             const item = document.createElement('div');
             item.classList.add('falling-item');
