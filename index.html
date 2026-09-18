@@ -534,6 +534,101 @@
         .ach-item.locked .ach-name { color: #95a5a6; }
 
         #run-ach { margin-top: 6px; font-size: 22px; letter-spacing: 4px; }
+
+        /* ── 世界出差 ── */
+        .trip-btn { background: #16a085; box-shadow: 0 4px 15px rgba(22,160,133,0.4); }
+        .trip-btn:hover { background: #138d75; }
+        .btn-row { display: flex; gap: 8px; margin-top: 10px; }
+        .btn-row .small-btn { margin-top: 0; }
+        #level-img {
+            display: none;
+            height: 150px;
+            border-radius: 10px;
+            border: 3px solid #f1c40f;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+            margin-bottom: 6px;
+        }
+        #passport-screen {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.92);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            z-index: 22;
+            padding: 10px 12px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        #passport-screen h2 { margin: 0 0 6px; font-size: 18px; }
+        .pp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; }
+        .pp-item { text-align: center; font-size: 12px; color: #bdc3c7; position: relative; }
+        .pp-item img { width: 100%; height: 130px; object-fit: cover; border-radius: 8px; border: 2px solid #444; }
+        .pp-item.locked img { filter: grayscale(1) brightness(0.5); }
+        .pp-item .pp-stamp {
+            position: absolute; top: 40px; left: 50%;
+            transform: translateX(-50%) rotate(-18deg);
+            border: 3px solid #e74c3c; color: #e74c3c;
+            border-radius: 6px; padding: 2px 6px;
+            font-weight: 900; font-size: 13px;
+            background: rgba(0,0,0,0.35);
+        }
+        .pp-item.locked .pp-stamp { display: none; }
+        .pp-name { margin-top: 3px; font-weight: bold; color: #f1c40f; }
+        .pp-item.locked .pp-name { color: #7f8c8d; }
+        .pp-mech { font-size: 11px; }
+
+        /* 出差：四角國旗 */
+        .corner-flag {
+            position: absolute;
+            font-size: 34px;
+            line-height: 1;
+            opacity: 0.85;
+            pointer-events: none;
+            z-index: 14;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.7);
+            display: none;
+        }
+        .corner-flag.tl { top: 44px; left: 6px; }
+        .corner-flag.tr { top: 44px; right: 6px; }
+        .corner-flag.bl { bottom: 34px; left: 6px; }
+        .corner-flag.br { bottom: 34px; right: 6px; }
+        #game-container.trip-on .corner-flag { display: block; }
+        #game-container { transition: border-color 0.4s; }
+
+        /* 蘇格蘭：風向 */
+        #wind-ind {
+            position: absolute;
+            top: 48px; left: 50%;
+            transform: translateX(-50%);
+            font-size: 22px; font-weight: 900;
+            color: #aed6f1;
+            text-shadow: 0 2px 6px #000;
+            opacity: 0; transition: opacity 0.3s;
+            pointer-events: none; z-index: 15;
+        }
+        /* 巴西：彩帶遮擋 */
+        #confetti {
+            position: absolute;
+            left: 0; width: 100%; height: 42%;
+            top: 30%;
+            background: repeating-linear-gradient(-30deg,
+                rgba(241,196,15,0.85) 0 14px, rgba(46,204,113,0.85) 14px 28px,
+                rgba(52,152,219,0.85) 28px 42px, rgba(231,76,60,0.85) 42px 56px,
+                rgba(155,89,182,0.85) 56px 70px);
+            opacity: 0; pointer-events: none; z-index: 18;
+            transition: opacity 0.15s;
+        }
+        #confetti::after {
+            content: '🎉 嘉年華！';
+            position: absolute; top: 45%; left: 0; right: 0;
+            text-align: center; font-size: 20px; font-weight: 900;
+            color: #fff; text-shadow: 0 2px 4px #000;
+        }
+        /* 日本：偽裝藥盒被揭穿時閃一下 */
+        @keyframes reveal { 0% { transform: scale(1.4) rotate(-10deg); } 100% { transform: scale(1) rotate(0); } }
+        .revealed { animation: reveal 0.25s ease-out; }
         .height-hint { color: #5dade2; }
     </style>
 </head>
@@ -581,10 +676,31 @@
                 <span style="color: #e74c3c; font-weight: bold;">☠️ 命用完 → 結束</span>
             </p>
             <button id="start-btn" style="margin-top:8px">開始發小費</button>
-            <button id="start-endless-btn" class="small-btn endless-btn" style="display:none">🌙 加班模式（無盡）</button>
-            <button id="ach-btn" class="small-btn">🏆 成就 0/12</button>
+            <div class="btn-row">
+                <button id="start-trip-btn" class="small-btn trip-btn">🌍 世界出差</button>
+                <button id="start-endless-btn" class="small-btn endless-btn" style="display:none">🌙 加班模式</button>
+            </div>
+            <div class="btn-row">
+                <button id="ach-btn" class="small-btn">🏆 成就 0/12</button>
+                <button id="passport-btn" class="small-btn">🛂 護照 0/6</button>
+            </div>
             <div id="start-board" class="board"></div>
         </div>
+
+        <!-- 護照畫面 -->
+        <div id="passport-screen">
+            <h2>🛂 爹地的護照</h2>
+            <div id="pp-grid" class="pp-grid"></div>
+            <button id="passport-close" class="small-btn">返回</button>
+        </div>
+
+        <!-- 出差：四角國旗 -->
+        <div class="corner-flag tl"></div><div class="corner-flag tr"></div>
+        <div class="corner-flag bl"></div><div class="corner-flag br"></div>
+
+        <!-- 國家機制用的畫面元素 -->
+        <div id="wind-ind"></div>
+        <div id="confetti"></div>
 
         <!-- 成就畫面 -->
         <div id="ach-screen">
@@ -595,6 +711,7 @@
 
         <!-- 關卡畫面（開場／過關／失敗共用） -->
         <div id="level-screen">
+            <img id="level-img" src="" alt="">
             <h2 id="level-title">關卡一 · 試用期</h2>
             <p id="level-body" class="instructions"></p>
             <button id="level-btn">開工</button>
@@ -666,6 +783,69 @@
         // 播放結尾影片的關卡（最後一關）。測試時可暫時改成 0 = 第一關就播
         const WIN_AFTER_LEVEL = LEVELS.length - 1;
 
+        // ===== 世界出差：六國關卡，每國一個專屬機制 =====
+        // mech: disguise（日本）dual（墨西哥）sine（印度）wind（蘇格蘭）goldrush（埃及）confetti（巴西）
+        const COUNTRIES = [
+            { id: 'jp', flag: '🇯🇵', country: '日本',   name: '東京 · 便當陷阱',   img: 'assets/country-japan.jpg',    currency: '¥',
+              time: 30, target: 800,  pill: 0.28, spawn: 240, bossMove: 260, speedBase: 3.0, drift: 0,   speedMul: 0.95,
+              junk: false, gold: 0.04, tool: 0.05, mech: 'disguise', accent: '#e53e3e',
+              tip: '有些「¥50」其實是藥盒，掉到一半才會露出真面目' },
+            { id: 'mx', flag: '🇲🇽', country: '墨西哥', name: '墨西哥 · 帽子雙軌',  img: 'assets/country-mexico.jpg',   currency: 'MX$',
+              time: 30, target: 900,  pill: 0.26, spawn: 420, bossMove: 300, speedBase: 2.8, drift: 0.8, speedMul: 0.9,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'dual', accent: '#2e8b57',
+              tip: '掉落物從大帽子兩側同時掉，兩邊都要顧' },
+            { id: 'in', flag: '🇮🇳', country: '印度',   name: '印度 · 寶萊塢 S 舞步', img: 'assets/country-india.jpg',  currency: '₹',
+              time: 30, target: 800,  pill: 0.27, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 0,   speedMul: 0.9,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'sine', accent: '#ff9933',
+              tip: '所有東西都跳 S 形舞步，看準擺回來的時機再接' },
+            { id: 'sc', flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', country: '蘇格蘭', name: '蘇格蘭 · 高地強風',  img: 'assets/country-scotland.jpg', currency: '£',
+              time: 30, target: 800,  pill: 0.27, spawn: 290, bossMove: 270, speedBase: 2.9, drift: 0.6, speedMul: 0.9,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'wind', accent: '#3b82f6',
+              tip: '風每 5 秒換向，所有東西都會被吹偏，注意畫面上方的風向' },
+            { id: 'eg', flag: '🇪🇬', country: '埃及',   name: '埃及 · 法老金庫',   img: 'assets/country-egypt.jpg',    currency: 'E£',
+              time: 30, target: 1200, pill: 0.36, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 1.2, speedMul: 0.9,
+              junk: false, gold: 0.16, tool: 0.05, mech: 'goldrush', accent: '#d4a017',
+              tip: '金鈔特別多，藥盒也特別多，貪多就秒禿' },
+            { id: 'br', flag: '🇧🇷', country: '巴西',   name: '巴西 · 嘉年華彩帶',  img: 'assets/country-brazil.jpg',   currency: 'R$',
+              time: 30, target: 900,  pill: 0.27, spawn: 270, bossMove: 250, speedBase: 2.9, drift: 1.5, speedMul: 0.9,
+              junk: true,  gold: 0.05, tool: 0.05, mech: 'confetti', accent: '#22c55e',
+              tip: '彩帶會隨時飄過來遮住畫面，被遮住時憑感覺也要接' }
+        ];
+        const TRIP_STOPS = 3;          // 一趟出差跑幾國
+        let trip = false;              // 目前是否在出差模式
+        let tripLevels = [];           // 這趟出差抽到的國家（依序）
+        function curLevels() { return trip ? tripLevels : LEVELS; }
+        function lastLevelIdx() { return curLevels().length - 1; }
+
+        // 國家機制的即時狀態
+        let windX = 0;                 // 蘇格蘭風力（px/幀，正右負左）
+        let confettiTimer = null;
+        const windInd  = document.getElementById('wind-ind');
+        const confetti = document.getElementById('confetti');
+        function setWind(v) {
+            windX = v;
+            windInd.innerText = v === 0 ? '' : v > 0 ? '💨 →→' : '←← 💨';
+            windInd.style.opacity = v === 0 ? '0' : '1';
+        }
+        function showConfetti() {
+            confetti.style.top = (18 + Math.random() * 35) + '%';
+            confetti.style.opacity = '1';
+            clearTimeout(confettiTimer);
+            confettiTimer = setTimeout(() => { confetti.style.opacity = '0'; }, 1300);
+        }
+        function hideConfetti() { clearTimeout(confettiTimer); confetti.style.opacity = '0'; }
+        // 出差進行中：四角放國旗、邊框換成該國代表色
+        function setCountryFrame(lv) {
+            if (lv) {
+                document.querySelectorAll('.corner-flag').forEach(el => el.innerText = lv.flag);
+                container.classList.add('trip-on');
+                container.style.borderColor = lv.accent || '#fff';
+            } else {
+                container.classList.remove('trip-on');
+                container.style.borderColor = '';
+            }
+        }
+
 
         const JUNK = [
             { bill: '1',  value: 1  },
@@ -724,7 +904,7 @@
                 tool:      0.05
             };
         }
-        function curLv() { return endless ? endlessLv() : LEVELS[levelIdx]; }
+        function curLv() { return endless ? endlessLv() : curLevels()[levelIdx]; }
         function endlessWave() { return Math.floor(elapsed / 15) + 1; }
 
         // ===== localStorage 小工具 =====
@@ -815,8 +995,43 @@
             { id: 'ot60',    icon: '🌙', name: '加班一小時', desc: '加班模式撐過 60 秒' },
             { id: 'ot120',   icon: '🧟', name: '爆肝',       desc: '加班模式撐過 120 秒' },
             { id: 'rich',    icon: '🏦', name: '萬元戶',     desc: '單場總小費超過 $10000' },
-            { id: 'fullhp',  icon: '💖', name: '一命未丟',   desc: '一條命都沒用就過三關' }
+            { id: 'fullhp',  icon: '💖', name: '一命未丟',   desc: '一條命都沒用就過三關' },
+            { id: 'trip1',   icon: '✈️', name: '第一次出差', desc: '完成一趟世界出差' },
+            { id: 'passport', icon: '🛂', name: '環遊世界',   desc: '護照集滿六國印章' }
         ];
+
+        // ===== 護照（出差過的國家）=====
+        let passport = load('wyd_passport', {});
+        function passportCount() { return COUNTRIES.filter(c => passport[c.id]).length; }
+        const passportBtn = document.getElementById('passport-btn');
+        function renderPassportBtn() { passportBtn.innerText = `🛂 護照 ${passportCount()}/${COUNTRIES.length}`; }
+        function stampPassport(id) {
+            if (!passport[id]) {
+                passport[id] = true;
+                save('wyd_passport', passport);
+                const c = COUNTRIES.find(x => x.id === id);
+                toast(`🛂 護照蓋章：${c.flag} ${c.country}`);
+                renderPassportBtn();
+            }
+            if (passportCount() >= COUNTRIES.length) unlock('passport');
+        }
+        function renderPassport() {
+            document.getElementById('pp-grid').innerHTML = COUNTRIES.map(c => `
+                <div class="pp-item ${passport[c.id] ? '' : 'locked'}">
+                    <img src="${c.img}" alt="">
+                    <div class="pp-stamp">已到訪</div>
+                    <div class="pp-name">${c.flag} ${c.country}</div>
+                    <div class="pp-mech">${c.name.split('·').pop().trim()}</div>
+                </div>`).join('');
+        }
+        passportBtn.addEventListener('click', () => {
+            renderPassport();
+            document.getElementById('passport-screen').style.display = 'flex';
+        });
+        document.getElementById('passport-close').addEventListener('click', () => {
+            document.getElementById('passport-screen').style.display = 'none';
+        });
+        renderPassportBtn();
         let achUnlocked = load('wyd_ach', {});
         let runAch = [];              // 本場新解鎖的成就
         let pillsThisLevel = 0;       // 本關吃到的藥盒數（含巨型）
@@ -868,7 +1083,7 @@
         }
         function renderBoard(el, mode, highlightIdx) {
             const b = getBoard(mode);
-            const title = mode === 'endless' ? '🌙 加班排行' : '🏆 故事排行';
+            const title = mode === 'endless' ? '🌙 加班排行' : mode === 'trip' ? '🌍 出差排行' : '🏆 故事排行';
             let html = `<div class="b-title">${title}</div>`;
             if (!b.length) html += `<div class="b-empty">還沒有人上榜</div>`;
             b.forEach((r, i) => {
@@ -1068,10 +1283,14 @@
         requestAnimationFrame(keyLoop);
 
         // ===== 關卡流程 =====
+        const levelImg = document.getElementById('level-img');
         function showLevelIntro() {
-            const lv = LEVELS[levelIdx];
-            levelTitle.innerText = lv.name;
+            const lv = curLevels()[levelIdx];
+            levelTitle.innerText = trip ? `${lv.flag} ${lv.name}` : lv.name;
+            if (trip) { levelImg.src = lv.img; levelImg.style.display = 'block'; }
+            else levelImg.style.display = 'none';
             levelBody.innerHTML =
+                (trip ? `第 ${levelIdx + 1} 站 / ${tripLevels.length}　` : '') +
                 `目標：<span style="color:#f1c40f">$${lv.target}</span>　限時 ${lv.time} 秒<br>` +
                 `<span class="lv-tip">${lv.tip}</span><br>` +
                 `目前髮量 <span style="color:#f5b041">${hairLevel + 1}/9</span>　` +
@@ -1099,7 +1318,17 @@
             clearItems();
             setHair(hairLevel);        // 髮量沿用，不重置
             updateScore();
-            if (endless) {
+            setWind(0); hideConfetti();
+            levelImg.style.display = 'none';
+            if (trip) {
+                levelDisplay.innerHTML =
+                    `${lv.flag} ${lv.country}<br><span class="lv-name">第 ${levelIdx + 1} 站</span>`;
+                timeDisplay.innerText = `${timeLeft}s`;
+                timeDisplay.style.color = '';
+                clockoutBtn.style.display = 'none';
+                if (lv.mech === 'wind') setWind(1.5);
+                setCountryFrame(lv);
+            } else if (endless) {
                 elapsed = 0;
                 levelDisplay.innerHTML = `加班中<br><span class="lv-name">第 1 波</span>`;
                 timeDisplay.innerText = '0s';
@@ -1134,6 +1363,13 @@
                 timeDisplay.innerText = `${timeLeft}s`;
                 timeDisplay.style.color = timeLeft <= 5 ? '#e74c3c' : '';
                 if (timeLeft === 5) sfx.warn();
+                // 國家機制的每秒事件
+                const mech = curLv().mech;
+                if (mech === 'wind' && timeLeft > 0 && timeLeft % 5 === 0) {
+                    setWind((Math.random() < 0.5 ? -1 : 1) * (1.2 + Math.random() * 0.8));
+                    sfx.warn();
+                }
+                if (mech === 'confetti' && timeLeft > 1 && Math.random() < 0.22) showConfetti();
                 if (timeLeft <= 0) endLevel();
             }, 1000);
 
@@ -1149,7 +1385,8 @@
         }
         function scheduleSpawn() {
             if (!isPlaying) return;
-            spawnItem();
+            if (curLv().mech === 'dual') { spawnItem(-1); spawnItem(1); }   // 墨西哥：帽子兩側同時掉
+            else spawnItem(0);
             spawnTimer = setTimeout(scheduleSpawn, curLv().spawn);
         }
 
@@ -1160,6 +1397,8 @@
             clearTimeout(bossTimer);
             resetMega();
             hideSplash();
+            setWind(0); hideConfetti();
+            setCountryFrame(null);
             clearItems();
             clockoutBtn.style.display = 'none';
         }
@@ -1171,12 +1410,14 @@
         // 時間到：判斷過關與否
         function endLevel() {
             stopLevel();
-            const lv = LEVELS[levelIdx];
+            const lv = curLevels()[levelIdx];
             if (score >= lv.target) {
                 bank += score;
                 sfx.clear();
                 if (pillsThisLevel === 0) unlock('clean');
-                if (levelIdx === WIN_AFTER_LEVEL) {
+                if (trip) stampPassport(lv.id);           // 每過一國就蓋章
+                if (trip && levelIdx === lastLevelIdx()) { unlock('trip1'); finish('tripclear'); return; }
+                if (!trip && levelIdx === WIN_AFTER_LEVEL) {
                     // 三關全過：解鎖加班模式與相關成就，再播影片
                     save('wyd_endless', true);
                     renderEndlessUnlock();
@@ -1193,7 +1434,8 @@
                     `這關賺了 <span style="color:#2ecc71">${fmtMoney(score)}</span>　` +
                     `累積 <span style="color:#2ecc71">${fmtMoney(bank)}</span><br>` +
                     `髮量 <span style="color:#f5b041">${hairLevel + 1}/9</span>　` +
-                    `下一關：${LEVELS[levelIdx].name}`;
+                    `下一${trip ? '站' : '關'}：${trip ? curLevels()[levelIdx].flag + ' ' : ''}${curLevels()[levelIdx].name}`;
+                if (trip) { levelImg.src = curLevels()[levelIdx].img; levelImg.style.display = 'block'; }
                 levelBtn.innerText = '繼續';
                 levelScreen.style.display = 'flex';
             } else {
@@ -1244,11 +1486,20 @@
         function finish(reason) {
             stopLevel();
             const h2 = gameOverScreen.querySelector('h2');
-            const total = bank + (reason === 'clear' ? 0 : score);
-            const mode = endless ? 'endless' : 'story';
+            const total = bank + (reason === 'clear' || reason === 'tripclear' ? 0 : score);
+            const mode = endless ? 'endless' : trip ? 'trip' : 'story';
             if (total >= 10000) unlock('rich');
 
-            if (endless) {
+            if (reason === 'tripclear') {
+                h2.innerText = '🛂 出差圓滿！';
+                const flags = tripLevels.map(l => l.flag).join(' ');
+                finalScore.innerHTML =
+                    `${flags}<br>` +
+                    `三站小費 <span style="color:#f1c40f">${fmtMoney(total)}</span>　髮量 ${hairLevel + 1}/9<br>` +
+                    `<span style="font-size:15px;color:#bdc3c7">護照已蓋 ${passportCount()}/${COUNTRIES.length} 國</span>`;
+                finalScore.style.color = '#f1c40f';
+                sfx.clear();
+            } else if (endless) {
                 h2.innerText = reason === 'overdose' ? '☠️ 加班到倒下' : '🏁 準時下班';
                 const wave = endlessWave();
                 const verdict = elapsed < 30  ? '這樣也算加班？'
@@ -1265,13 +1516,13 @@
                 h2.innerText = '☠️ 適尿通過量！';
                 finalScore.innerHTML =
                     `三條命都用完，最後一盒直接送走<br>` +
-                    `倒在第 ${levelIdx + 1} 關，結算 ${fmtMoney(total)}`;
+                    `倒在第 ${levelIdx + 1} ${trip ? '站' : '關'}，結算 ${fmtMoney(total)}`;
                 finalScore.style.color = '#e74c3c';
                 sfx.fail();
             } else if (reason === 'broke') {
                 h2.innerText = '💸 三命用盡';
                 finalScore.innerHTML =
-                    `第 ${levelIdx + 1} 關業績一直沒達標<br>` +
+                    `第 ${levelIdx + 1} ${trip ? '站' : '關'}業績一直沒達標<br>` +
                     `爹地不再給機會，結算 ${fmtMoney(total)}`;
                 finalScore.style.color = '#e74c3c';
                 sfx.fail();
@@ -1307,8 +1558,9 @@
                 renderBoard(overBoard, mode, -1);
             }
 
-            replayBtn.style.display      = (!endless && reason === 'clear') ? 'block' : 'none';
-            overEndlessBtn.style.display = (!endless && reason === 'clear') ? 'block' : 'none';
+            replayBtn.style.display      = (!endless && !trip && reason === 'clear') ? 'block' : 'none';
+            overEndlessBtn.style.display = (!endless && !trip && reason === 'clear') ? 'block' : 'none';
+            restartBtn.innerText = trip ? '再出差一次' : '再挑戰一次';
             gameOverScreen.style.display = 'flex';
         }
 
@@ -1526,10 +1778,12 @@
             requestAnimationFrame(sweep);
         }
 
-        function spawnItem() {
+        // offset：-1 / 1 = 墨西哥雙軌的左右側，0 = 正常從爹地中間掉
+        function spawnItem(offset) {
+            offset = offset || 0;
             if (!isPlaying) return;
-            // 巨型藥盒：故事模式在分數達到當關目標 50% 後 8%；加班模式 15 秒後 6%
-            const megaReady = endless ? elapsed >= 30 : score >= LEVELS[levelIdx].target * 0.5;
+            // 巨型藥盒：故事／出差在分數達到當關目標 50% 後 8%；加班模式 30 秒後 4%
+            const megaReady = endless ? elapsed >= 30 : score >= curLevels()[levelIdx].target * 0.5;
             if (!megaCooldown && megaReady && Math.random() < (endless ? 0.04 : 0.08)) {
                 spawnMegaPill(); return;
             }
@@ -1604,8 +1858,24 @@
                 value = parseInt(amt, 10);
             }
 
+            // 出差：鈔票標籤換成當地貨幣
+            const cur = lv.currency || '$';
+            if (cur !== '$' && (type === 'junk' || type === 'gold' || /^\d+$/.test(type))) {
+                item.innerText = item.innerText.replace('$', cur);
+            }
+
+            // 日本：部分藥盒偽裝成 ¥50 鈔票，掉到一半才揭穿
+            let disguised = false;
+            if (lv.mech === 'disguise' && type === 'pill' && Math.random() < 0.6) {
+                disguised = true;
+                item.classList.remove('pill-box');
+                item.classList.add('bill');
+                item.style.backgroundImage = `url('${BILLS['50']}')`;
+                item.innerText = cur + '50';
+            }
+
             const bossLeft = parseFloat(boss.style.left) || 170;
-            item.style.left = (bossLeft + bossWidth / 2 - 15) + 'px';
+            item.style.left = (bossLeft + bossWidth / 2 - 15 + offset * 48) + 'px';
             item.style.top = '125px';
             container.appendChild(item);
 
@@ -1618,17 +1888,34 @@
                 drift = dir * (lv.drift * (0.45 + Math.random() * 0.55));
             }
             let x = parseFloat(item.style.left);
+            const baseX = x;                       // 印度 S 形的中心線
+            const sineAmp = 60 + Math.random() * 30;
+            const sinePhase = Math.random() * Math.PI * 2;
 
             function fall() {
                 if (!isPlaying) { item.remove(); return; }
                 topPos += speed;
                 item.style.top = topPos + 'px';
-                if (drift) {
-                    x += drift;
-                    const w = item.offsetWidth || 68;
+                const w = item.offsetWidth || 68;
+                if (lv.mech === 'sine') {
+                    // 印度：沿中心線做 S 形擺動
+                    x = baseX + sineAmp * Math.sin((topPos - 125) / 48 + sinePhase);
+                    x = Math.max(0, Math.min(containerWidth - w, x));
+                    item.style.left = x + 'px';
+                } else if (drift || windX) {
+                    x += drift + windX;            // 蘇格蘭：加上風力
                     if (x < 0) { x = 0; drift = -drift; }               // 撞左牆反彈
                     else if (x > containerWidth - w) { x = containerWidth - w; drift = -drift; }
                     item.style.left = x + 'px';
+                }
+                // 日本：偽裝的藥盒掉到一半露出真面目
+                if (disguised && topPos > 300) {
+                    disguised = false;
+                    item.classList.remove('bill');
+                    item.classList.add('pill-box', 'revealed');
+                    item.style.backgroundImage = '';
+                    item.innerText = '';
+                    sfx.warn();
                 }
 
                 const b = basket.getBoundingClientRect();
@@ -1720,14 +2007,22 @@
         }
         function newGame() {
             ensureAudio();
-            endless = false;
+            endless = false; trip = false;
             resetRun();
+            showLevelIntro();
+        }
+        // 世界出差：從六國隨機抽 TRIP_STOPS 國，順序也隨機
+        function newTrip() {
+            ensureAudio();
+            endless = false; trip = true;
+            resetRun();
+            tripLevels = COUNTRIES.slice().sort(() => Math.random() - 0.5).slice(0, TRIP_STOPS);
             showLevelIntro();
         }
         // 從開始畫面進加班：全新一場，髮量 0
         function newEndless() {
             ensureAudio();
-            endless = true;
+            endless = true; trip = false;
             resetRun();
             startScreen.style.display = 'none';
             startLevel();
@@ -1741,7 +2036,8 @@
             startLevel();
         }
         startBtn.addEventListener('click', newGame);
-        restartBtn.addEventListener('click', newGame);
+        restartBtn.addEventListener('click', () => trip ? newTrip() : newGame());
+        document.getElementById('start-trip-btn').addEventListener('click', newTrip);
         startEndlessBtn.addEventListener('click', newEndless);
         overEndlessBtn.addEventListener('click', continueEndless);
         clockoutBtn.addEventListener('click', (e) => {
