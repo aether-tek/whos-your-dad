@@ -596,6 +596,14 @@
         .corner-flag.br { bottom: 34px; right: 6px; }
         #game-container.trip-on .corner-flag { display: block; }
         #game-container { transition: border-color 0.4s; }
+        /* 出差：背景是該國服裝的爹地，蓋一層淡暗色讓掉落物看得清楚 */
+        #game-container.trip-on { background-position: center top; }
+        #bg-dim {
+            position: absolute; inset: 0;
+            background: linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.35));
+            pointer-events: none; z-index: 1; display: none;
+        }
+        #game-container.trip-on #bg-dim { display: block; }
 
         /* 蘇格蘭：風向 */
         #wind-ind {
@@ -694,6 +702,7 @@
             <button id="passport-close" class="small-btn">返回</button>
         </div>
 
+        <div id="bg-dim"></div>
         <!-- 出差：四角國旗 -->
         <div class="corner-flag tl"></div><div class="corner-flag tr"></div>
         <div class="corner-flag bl"></div><div class="corner-flag br"></div>
@@ -852,9 +861,11 @@
                 document.querySelectorAll('.corner-flag').forEach(el => el.innerText = lv.flag);
                 container.classList.add('trip-on');
                 container.style.borderColor = lv.accent || '#fff';
+                container.style.backgroundImage = `url('${lv.img}')`;   // 背景換成該國服裝的爹地
             } else {
                 container.classList.remove('trip-on');
                 container.style.borderColor = '';
+                container.style.backgroundImage = '';
             }
         }
 
