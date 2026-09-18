@@ -562,9 +562,12 @@
             overflow-y: auto;
         }
         #passport-screen h2 { margin: 0 0 6px; font-size: 18px; }
-        .pp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; }
+        .pp-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; }
         .pp-item { text-align: center; font-size: 12px; color: #bdc3c7; position: relative; }
-        .pp-item img { width: 100%; height: 96px; object-fit: cover; object-position: top; border-radius: 8px; border: 2px solid #444; }
+        .pp-item img { width: 100%; height: 72px; object-fit: cover; object-position: top; border-radius: 8px; border: 2px solid #444; }
+        .pp-item .pp-stamp { top: 22px; font-size: 11px; padding: 1px 4px; border-width: 2px; }
+        .pp-name { font-size: 11px; }
+        .pp-mech { font-size: 10px; }
         .pp-item.locked img { filter: grayscale(1) brightness(0.5); }
         .pp-item .pp-stamp {
             position: absolute; top: 30px; left: 50%;
@@ -634,6 +637,31 @@
             text-align: center; font-size: 20px; font-weight: 900;
             color: #fff; text-shadow: 0 2px 4px #000;
         }
+        /* 挪威：極夜，蓋在掉落物上但錢包（z 10）看得到 */
+        #dark {
+            position: absolute; inset: 0;
+            background: radial-gradient(ellipse at 50% 20%, rgba(0,20,60,0.6), rgba(0,0,0,0.9) 70%);
+            opacity: 0; pointer-events: none; z-index: 9;
+            transition: opacity 0.3s;
+        }
+        #dark::after {
+            content: '🌌 極夜';
+            position: absolute; top: 20%; left: 0; right: 0;
+            text-align: center; font-size: 18px; font-weight: 900;
+            color: #aee3ff; text-shadow: 0 0 8px #4fc3f7;
+        }
+        /* 紐西蘭：地震 */
+        @keyframes shake {
+            0%,100% { transform: translate(0,0); }
+            20% { transform: translate(-6px, 3px); }
+            40% { transform: translate(6px, -3px); }
+            60% { transform: translate(-5px, -2px); }
+            80% { transform: translate(5px, 2px); }
+        }
+        #game-container.shake { animation: shake 0.5s linear; }
+        /* 中國：紅包 */
+        .hongbao { filter: drop-shadow(0 0 6px #ff4d4d) drop-shadow(0 0 12px #ffd700); animation: none; }
+
         /* 日本：偽裝藥盒被揭穿時閃一下 */
         @keyframes reveal { 0% { transform: scale(1.4) rotate(-10deg); } 100% { transform: scale(1) rotate(0); } }
         .revealed { animation: reveal 0.25s ease-out; }
@@ -710,6 +738,7 @@
         <!-- 國家機制用的畫面元素 -->
         <div id="wind-ind"></div>
         <div id="confetti"></div>
+        <div id="dark"></div>
 
         <!-- 成就畫面 -->
         <div id="ach-screen">
@@ -830,7 +859,51 @@
             { id: 'ke', flag: '🇰🇪', country: '肯亞',   name: '肯亞 · 馬拉松爹地',  img: 'assets/country-kenya.jpg',    currency: 'KSh',
               time: 30, target: 1100, pill: 0.22, spawn: 200, bossMove: 110, speedBase: 2.9, drift: 0.4, speedMul: 0.9,
               junk: false, gold: 0.05, tool: 0.05, mech: 'sprint', accent: '#111111',
-              tip: '爹地跑得飛快、撒得又密，落點完全不能預測' }
+              tip: '爹地跑得飛快、撒得又密，落點完全不能預測' },
+            { id: 'cn', flag: '🇨🇳', country: '中國',   name: '北京 · 紅包大放送',  img: 'assets/country-china.jpg',    currency: '¥',
+              time: 30, target: 1000, pill: 0.27, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 0.8, speedMul: 0.9,
+              junk: false, gold: 0.03, tool: 0.05, mech: 'hongbao', accent: '#de2910',
+              tip: '會掉 🧧 紅包，拆開才知道是 50、100、200、500，還是空包扣 50' },
+            { id: 'ng', flag: '🇳🇬', country: '奈及利亞', name: '拉哥斯 · 王子的匯款', img: 'assets/country-nigeria.jpg', currency: '₦',
+              time: 30, target: 1000, pill: 0.27, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 0.8, speedMul: 0.9,
+              junk: false, gold: 0.14, tool: 0.05, mech: 'fakegold', accent: '#008751',
+              tip: '金鈔特別多，但一半是王子寄來的假支票，接到會斷連擊' },
+            { id: 'pe', flag: '🇵🇪', country: '秘魯',   name: '馬丘比丘 · 高山缺氧', img: 'assets/country-peru.jpg',     currency: 'S/',
+              time: 30, target: 900,  pill: 0.26, spawn: 300, bossMove: 270, speedBase: 2.6, drift: 0.6, speedMul: 0.9,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'altitude', basketMax: 400, accent: '#d91023',
+              tip: '海拔太高，錢包只能在畫面上半部活動，反應時間變短但加成一直有' },
+            { id: 'tr', flag: '🇹🇷', country: '土耳其', name: '伊斯坦堡 · 冰淇淋騙術', img: 'assets/country-turkey.jpg',  currency: '₺',
+              time: 30, target: 900,  pill: 0.26, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 0.8, speedMul: 0.9,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'stretch', accent: '#e30a17',
+              tip: '鈔票掉到一半會突然被收回去再放下來，別太早伸手' },
+            { id: 'th', flag: '🇹🇭', country: '泰國',   name: '曼谷 · 雙倍辣度',   img: 'assets/country-thailand.jpg', currency: '฿',
+              time: 30, target: 900,  pill: 0.22, spawn: 290, bossMove: 260, speedBase: 2.8, drift: 0.8, speedMul: 0.9,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'spicy', accent: '#a51931',
+              tip: '藥盒一次來兩盒並排掉，閃的時候要閃遠一點' },
+            { id: 'no', flag: '🇳🇴', country: '挪威',   name: '特羅姆瑟 · 極夜',   img: 'assets/country-norway.jpg',   currency: 'kr',
+              time: 30, target: 900,  pill: 0.26, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 0.8, speedMul: 0.9,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'dark', accent: '#00205b',
+              tip: '極夜隨時降臨，畫面會暗掉 2 秒，記住東西掉在哪裡' },
+            { id: 'ru', flag: '🇷🇺', country: '俄羅斯', name: '莫斯科 · 俄羅斯娃娃',  img: 'assets/country-russia.jpg',   currency: '₽',
+              time: 30, target: 1000, pill: 0.20, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 0.8, speedMul: 0.9,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'matryoshka', mega: 0.2, megaAlways: true, accent: '#0039a6',
+              tip: '巨型藥盒從一開始就會來，而且很頻繁，一般藥盒反而少' },
+            { id: 'nz', flag: '🇳🇿', country: '紐西蘭', name: '威靈頓 · 地牛翻身',  img: 'assets/country-newzealand.jpg', currency: 'NZ$',
+              time: 30, target: 900,  pill: 0.26, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 0.8, speedMul: 0.9,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'quake', accent: '#00247d',
+              tip: '每 4 秒一次地震，錢包會被震到旁邊去，震完馬上歸位' },
+            { id: 'fr', flag: '🇫🇷', country: '法國',   name: '巴黎 · 米其林小費',  img: 'assets/country-france.jpg',   currency: '€',
+              time: 30, target: 1400, pill: 0.30, spawn: 300, bossMove: 260, speedBase: 2.8, drift: 0.8, speedMul: 0.9,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'gourmet', accent: '#0055a4',
+              tip: '只掉 €50 和 €100，沒有小鈔，但門檻高、藥盒也多' },
+            { id: 'ua', flag: '🇺🇦', country: '烏克蘭', name: '基輔 · 向日葵田',   img: 'assets/country-ukraine.jpg',  currency: '₴',
+              time: 30, target: 900,  pill: 0.28, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 0.8, speedMul: 0.9,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'sunflower', lifeChance: 0.09, lifePerLevel: 5, pillCost: 100, accent: '#ffd700',
+              tip: '補命代幣掉很多（最多 5 個），但藥盒一盒扣 100' },
+            { id: 'es', flag: '🇪🇸', country: '西班牙', name: '塞維亞 · 午睡時間',  img: 'assets/country-spain.jpg',    currency: '€',
+              time: 30, target: 900,  pill: 0.26, spawn: 280, bossMove: 260, speedBase: 2.9, drift: 0.8, speedMul: 0.9,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'siesta', accent: '#c60b1e',
+              tip: '所有掉落物會隨時停在半空睡 1.2 秒，醒來一起掉下來' }
         ];
         const TRIP_STOPS = 3;          // 一趟出差跑幾國
         let trip = false;              // 目前是否在出差模式
@@ -855,6 +928,34 @@
             confettiTimer = setTimeout(() => { confetti.style.opacity = '0'; }, 1300);
         }
         function hideConfetti() { clearTimeout(confettiTimer); confetti.style.opacity = '0'; }
+        // 挪威：極夜
+        const darkEl = document.getElementById('dark');
+        let darkTimer = null;
+        function showDark() {
+            darkEl.style.opacity = '1';
+            clearTimeout(darkTimer);
+            darkTimer = setTimeout(() => { darkEl.style.opacity = '0'; }, 2000);
+        }
+        function hideDark() { clearTimeout(darkTimer); darkEl.style.opacity = '0'; }
+        // 西班牙：午睡，所有掉落物停 1.2 秒
+        let frozen = false, frozenTimer = null;
+        function siesta() {
+            if (frozen) return;
+            frozen = true;
+            popText(140, 300, '😴 午睡時間', '#f9e79f');
+            clearTimeout(frozenTimer);
+            frozenTimer = setTimeout(() => { frozen = false; }, 1200);
+        }
+        function wakeUp() { clearTimeout(frozenTimer); frozen = false; }
+        // 紐西蘭：地震，畫面晃、錢包被震開
+        function quake() {
+            container.classList.remove('shake'); void container.offsetWidth;
+            container.classList.add('shake');
+            setTimeout(() => container.classList.remove('shake'), 500);
+            moveBasket(basketX + (Math.random() < 0.5 ? -1 : 1) * (60 + Math.random() * 60), basketY);
+            popText(basketX, basketY - 30, '🌋 地震！', '#e67e22');
+            sfx.mega();
+        }
         // 出差進行中：四角放國旗、邊框換成該國代表色
         function setCountryFrame(lv) {
             if (lv) {
@@ -1025,6 +1126,12 @@
         ];
 
         // ===== 護照（出差過的國家）=====
+        // 護照版本：國家從 9 國擴充到 20 國時，把所有玩家的舊護照清空一次
+        const PASSPORT_VERSION = 2;
+        if (load('wyd_passport_ver', 1) < PASSPORT_VERSION) {
+            save('wyd_passport', {});
+            save('wyd_passport_ver', PASSPORT_VERSION);
+        }
         let passport = load('wyd_passport', {});
         function passportCount() { return COUNTRIES.filter(c => passport[c.id]).length; }
         const passportBtn = document.getElementById('passport-btn');
@@ -1248,8 +1355,10 @@
         function moveBasket(x, y) {
             if (x < 0) x = 0;
             if (x > containerWidth - basketWidth) x = containerWidth - basketWidth;
+            // 秘魯：高山缺氧，錢包只能在上半部（basketMax 比預設低）
+            const maxY = (trip && curLv().basketMax) || BASKET_MAX_Y;
             if (y < BASKET_MIN_Y) y = BASKET_MIN_Y;
-            if (y > BASKET_MAX_Y) y = BASKET_MAX_Y;
+            if (y > maxY) y = maxY;
             basketX = x; basketY = y;
             basket.style.left = x + 'px';
             basket.style.top  = y + 'px';
@@ -1354,7 +1463,7 @@
             clearItems();
             setHair(hairLevel);        // 髮量沿用，不重置
             updateScore();
-            setWind(0); hideConfetti();
+            setWind(0); hideConfetti(); hideDark(); wakeUp();
             levelImg.style.display = 'none';
             if (trip) {
                 levelDisplay.innerHTML =
@@ -1406,6 +1515,9 @@
                     sfx.warn();
                 }
                 if (mech === 'confetti' && timeLeft > 1 && Math.random() < 0.22) showConfetti();
+                if (mech === 'dark' && timeLeft > 2 && Math.random() < 0.2) showDark();
+                if (mech === 'siesta' && timeLeft > 1 && Math.random() < 0.18) siesta();
+                if (mech === 'quake' && timeLeft > 0 && timeLeft % 4 === 0) quake();
                 if (timeLeft <= 0) endLevel();
             }, 1000);
 
@@ -1421,8 +1533,12 @@
         }
         function scheduleSpawn() {
             if (!isPlaying) return;
-            if (curLv().mech === 'dual') { spawnItem(-1); spawnItem(1); }   // 墨西哥：帽子兩側同時掉
-            else spawnItem(0);
+            const mech = curLv().mech;
+            if (mech === 'dual') { spawnItem(-1); spawnItem(1); }   // 墨西哥：帽子兩側同時掉
+            else {
+                const t = spawnItem(0);
+                if (mech === 'spicy' && t === 'pill') spawnItem(1);   // 泰國：藥盒一次兩盒並排
+            }
             spawnTimer = setTimeout(scheduleSpawn, curLv().spawn);
         }
 
@@ -1433,7 +1549,7 @@
             clearTimeout(bossTimer);
             resetMega();
             hideSplash();
-            setWind(0); hideConfetti();
+            setWind(0); hideConfetti(); hideDark(); wakeUp();
             setCountryFrame(null);
             clearItems();
             clockoutBtn.style.display = 'none';
@@ -1822,8 +1938,10 @@
             offset = offset || 0;
             if (!isPlaying) return;
             // 巨型藥盒：故事／出差在分數達到當關目標 50% 後 8%；加班模式 30 秒後 4%
-            const megaReady = endless ? elapsed >= 30 : raw >= curLevels()[levelIdx].target * 0.5;
-            if (!megaCooldown && megaReady && Math.random() < (endless ? 0.04 : 0.08)) {
+            const lv0 = curLv();
+            const megaReady = endless ? elapsed >= 30 : (lv0.megaAlways || raw >= lv0.target * 0.5);
+            const megaChance = endless ? 0.04 : (lv0.mega || 0.08);   // 俄羅斯：更頻繁
+            if (!megaCooldown && megaReady && Math.random() < megaChance) {
                 spawnMegaPill(); return;
             }
 
@@ -1841,11 +1959,12 @@
             const comboPillSpd = combo * 0.3;
             const p_pill = Math.min(lv.pill * comboPillMul, 0.65);  // 最高 65%
             // 每關最多掉 LIFE_PER_LEVEL 個；命滿也照掉，接到改給獎金
-            const canLife = lifeSpawnedThisLevel < LIFE_PER_LEVEL;
-            const p_life = p_pill + (canLife ? LIFE_CHANCE : 0);
+            const canLife = lifeSpawnedThisLevel < (lv.lifePerLevel || LIFE_PER_LEVEL);   // 烏克蘭：更多補命
+            const p_life = p_pill + (canLife ? (lv.lifeChance || LIFE_CHANCE) : 0);
             const p_tool = p_life + lv.tool;
             const p_gold = p_tool + lv.gold;
-            const p_junk = p_gold + (lv.junk ? 0.25 : 0);
+            const p_hongbao = p_gold + (lv.mech === 'hongbao' ? 0.08 : 0);   // 中國：紅包
+            const p_junk = p_hongbao + (lv.junk ? 0.25 : 0);
 
             if (rand < p_pill) {
                 item.classList.add('pill-box');
@@ -1876,6 +1995,13 @@
                 value = 500;
                 speed += 5;     // 快
 
+            } else if (rand < p_hongbao) {
+                // 中國：紅包，拆開才知道多少
+                item.classList.add('tool', 'hongbao');
+                item.innerText = '🧧';
+                type = 'hongbao';
+                speed += 1;
+
             } else if (lv.junk && rand < p_junk) {
                 const j = JUNK[Math.floor(Math.random() * JUNK.length)];
                 item.classList.add('bill');
@@ -1887,9 +2013,13 @@
             } else {
                 const r2 = (rand - p_junk) / (1 - p_junk) || Math.random();
                 let amt;
-                if (r2 < 0.55)      { amt = '10';  }
-                else if (r2 < 0.85) { amt = '50';  speed += 1; }
-                else                { amt = '100'; speed += 3; }
+                if (lv.mech === 'gourmet') {
+                    // 法國：只掉 50 與 100
+                    if (r2 < 0.6) { amt = '50';  speed += 1; }
+                    else          { amt = '100'; speed += 3; }
+                } else if (r2 < 0.55) { amt = '10';  }
+                else if (r2 < 0.85)   { amt = '50';  speed += 1; }
+                else                  { amt = '100'; speed += 3; }
                 item.classList.add('bill');
                 item.style.backgroundImage = `url('${BILLS[amt]}')`;
                 item.innerText = '$' + amt;
@@ -1930,10 +2060,19 @@
             const baseX = x;                       // 印度 S 形的中心線
             const sineAmp = 60 + Math.random() * 30;
             const sinePhase = Math.random() * Math.PI * 2;
+            let stretched = false, stretchLeft = 0;   // 土耳其：被收回去的幀數
 
             function fall() {
                 if (!isPlaying) { item.remove(); return; }
+                if (frozen) { requestAnimationFrame(fall); return; }   // 西班牙：午睡，全部停住
                 topPos += speed;
+                // 土耳其：鈔票掉到一半被收回去一段，再放下來
+                if (lv.mech === 'stretch' && !stretched && /^\d+$/.test(type)
+                    && topPos > 260 && Math.random() < 0.03) {
+                    stretched = true; stretchLeft = 22;
+                    popText(x, topPos - 24, '🍦 收回！', '#f5b7b1');
+                }
+                if (stretchLeft > 0) { stretchLeft--; topPos -= speed * 1.8; }
                 item.style.top = topPos + 'px';
                 const w = item.offsetWidth || 68;
                 if (lv.mech === 'sine') {
@@ -1969,7 +2108,8 @@
                     r.right >= b.left && r.left <= b.right) {
                     const px = basketX, py = basketY - 22;   // 飄字位置
                     if (type === 'pill') {
-                        score -= 50; raw = Math.max(0, raw - 50);
+                        const pc = lv.pillCost || 50;              // 烏克蘭：藥盒扣 100
+                        score -= pc; raw = Math.max(0, raw - pc);
                         pillsThisLevel++;
                         if (combo >= 3) popText(px - 10, py - 18, `連擊 ×${combo} 斷了`, '#e74c3c');
                         resetCombo();
@@ -1981,7 +2121,22 @@
                             return;
                         }
                         setHair(hairLevel + 1);
-                        popText(px, py, '-$50', '#e74c3c');
+                        popText(px, py, `-$${lv.pillCost || 50}`, '#e74c3c');
+
+                    } else if (type === 'hongbao') {
+                        // 中國：拆紅包，50 / 100 / 200 / 500，或空包扣 50
+                        const pool = [50, 50, 100, 100, 200, 500, -50, -50];
+                        const v = pool[Math.floor(Math.random() * pool.length)];
+                        if (v < 0) {
+                            score += v; raw = Math.max(0, raw + v);
+                            if (combo >= 3) popText(px - 10, py - 18, `連擊 ×${combo} 斷了`, '#e74c3c');
+                            resetCombo(); sfx.junk();
+                            popText(px, py, '🧧 空包！-$50', '#e74c3c');
+                        } else {
+                            score += v; raw += v; addCombo();
+                            (v >= 200 ? sfx.gold : sfx.bill)(v);
+                            popText(px, py, `🧧 +$${v}`, v >= 200 ? '#ffd700' : '#ff6b6b');
+                        }
 
                     } else if (type === 'life') {
                         if (lives < MAX_LIVES) { lives++; renderLives(); popText(px, py, '+1 命！', '#f1c40f'); }
@@ -2009,6 +2164,13 @@
                         popText(px, py, `+$${value}`, '#95a5a6');
 
                     } else {
+                        // 奈及利亞：一半金鈔是王子的假支票
+                        if (type === 'gold' && lv.mech === 'fakegold' && Math.random() < 0.5) {
+                            if (combo >= 3) popText(px - 10, py - 18, `連擊 ×${combo} 斷了`, '#e74c3c');
+                            resetCombo(); sfx.junk();
+                            popText(px - 30, py, '💸 王子的支票…是假的', '#95a5a6');
+                            updateScore(); item.remove(); return;
+                        }
                         // 一般鈔票與金鈔：連擊倍率 × 高空加成（韓國：連擊倍率翻倍）
                         const mul = comboMultiplier() * (lv.mech === 'kcombo' && combo >= 2 ? 2 : 1);
                         const hb  = heightBonus();
@@ -2043,6 +2205,7 @@
                 else requestAnimationFrame(fall);
             }
             requestAnimationFrame(fall);
+            return type;
         }
 
         // ===== 按鈕 =====
