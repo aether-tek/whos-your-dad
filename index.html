@@ -666,6 +666,86 @@
         @keyframes reveal { 0% { transform: scale(1.4) rotate(-10deg); } 100% { transform: scale(1) rotate(0); } }
         .revealed { animation: reveal 0.25s ease-out; }
         .height-hint { color: #5dade2; }
+
+        /* ── 開始頁模式卡片 ── */
+        .mode-cards { display: flex; flex-direction: column; gap: 8px; width: 92%; }
+        .mode-card {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 12px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.08);
+            border: 2px solid rgba(255,255,255,0.15);
+            cursor: pointer;
+            text-align: left;
+            position: relative;
+            transition: transform 0.15s, background 0.15s;
+        }
+        .mode-card:hover { transform: scale(1.02); background: rgba(255,255,255,0.14); }
+        .mode-card.story   { border-color: #2ecc71; }
+        .mode-card.trip    { border-color: #16a085; }
+        .mode-card.endless { border-color: #8e44ad; }
+        .mc-icon { font-size: 30px; width: 36px; text-align: center; }
+        .mc-text { flex: 1; }
+        .mc-name { font-size: 16px; font-weight: bold; }
+        .mode-card.story .mc-name   { color: #2ecc71; }
+        .mode-card.trip .mc-name    { color: #1abc9c; }
+        .mode-card.endless .mc-name { color: #bb8fce; }
+        .mc-desc { font-size: 12px; color: #bdc3c7; line-height: 1.35; }
+        .mc-best { font-size: 11px; color: #f1c40f; margin-top: 2px; }
+        .mc-lock {
+            position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+            font-size: 11px; color: #e74c3c; font-weight: bold;
+            background: rgba(0,0,0,0.6); padding: 3px 7px; border-radius: 8px;
+            display: none;
+        }
+        .mode-card.locked { opacity: 0.55; filter: grayscale(0.6); }
+        .mode-card.locked .mc-lock { display: block; }
+        .mode-card.locked:hover { transform: none; }
+
+        /* ── 音效 / 音樂 工具列 ── */
+        #audio-bar {
+            position: absolute; bottom: 6px; left: 6px;
+            display: flex; gap: 4px;
+            z-index: 40;
+        }
+        #audio-bar button {
+            margin: 0; padding: 4px 9px;
+            font-size: 12px; font-weight: normal;
+            background: rgba(0,0,0,0.6); color: #ecf0f1;
+            border-radius: 12px; box-shadow: none;
+        }
+        #audio-bar button:hover { background: rgba(0,0,0,0.85); transform: none; }
+        #audio-bar button.off { color: #7f8c8d; text-decoration: line-through; }
+
+        /* ── 怎麼玩 ── */
+        #help-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.92);
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 22; padding: 12px 16px; box-sizing: border-box;
+        }
+        #help-screen h2 { margin: 0 0 4px; font-size: 18px; }
+        #help-screen .instructions { font-size: 12.5px; line-height: 1.7; }
+
+        /* ── 特產 ── */
+        .souvenir-item {
+            font-size: 40px;
+            filter: drop-shadow(0 0 8px #fff) drop-shadow(0 0 16px #f1c40f);
+            animation: souvenirBob 0.8s ease-in-out infinite alternate;
+        }
+        @keyframes souvenirBob { from { transform: translateY(0) rotate(-6deg); } to { transform: translateY(-6px) rotate(6deg); } }
+        .souvenir-item::after {
+            content: '特產！';
+            position: absolute; left: 50%; bottom: -14px; transform: translateX(-50%);
+            font-size: 11px; font-weight: 900; color: #fff; white-space: nowrap;
+            text-shadow: 0 1px 3px #000;
+        }
+        .pp-souvenir {
+            position: absolute; right: 2px; top: 2px;
+            font-size: 18px; filter: drop-shadow(0 1px 2px #000);
+        }
+        .pp-item.locked .pp-souvenir { display: none; }
+        .lv-say { color: #f9e79f; font-size: 14px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -695,32 +775,68 @@
         <div id="toast"></div>
 
         <!-- 角落按鈕 -->
-        <button id="mute-btn" class="corner-btn">🔊 音效</button>
         <button id="clockout-btn" class="corner-btn">🏁 下班結算</button>
 
-        <!-- 開始畫面 -->
+        <!-- 音效 / 音樂 各自開關，蓋在所有畫面之上 -->
+        <div id="audio-bar">
+            <button id="sfx-btn">🔊 音效</button>
+            <button id="bgm-btn">🎵 音樂</button>
+        </div>
+
+        <!-- 開始畫面：三種模式卡片 -->
         <div id="start-screen">
             <h2 style="margin:0 0 2px">Who's Your Dad?</h2>
-            <p style="margin:0 0 6px;color:#f1c40f;font-size:15px">接住爹地灑下來的小費</p>
-            <p class="instructions" style="margin-top:6px">
-                三個關卡，每關都要達到業績目標才能晉級<br>
-                💵 $10 | 💵 $50 | 💵 $100<br>
-                <span style="color:#5dade2">🎮 滑鼠 / 方向鍵 / WASD / 手指　上下左右都能動</span><br>
-                <span class="height-hint">🚀 錢包越高，接到的錢加成越多（最高 ×1.5）</span><br>
-                <span style="color: #ffeb3b; font-weight: bold;">⚠️ 接到「適尿通」扣 50，爹地頭髮 +1</span><br>
-                <span style="color: #f1c40f; font-weight: bold;"><img class="life-ico" src="assets/life.png" alt=""> 開局三命、最多五命，三關共用；沒達標或髮量爆表扣一命，接到爹地人頭補一命</span><br>
-                <span style="color: #e74c3c; font-weight: bold;">☠️ 命用完 → 結束</span>
-            </p>
-            <button id="start-btn" style="margin-top:8px">開始發小費</button>
-            <div class="btn-row">
-                <button id="start-trip-btn" class="small-btn trip-btn">🌍 世界出差</button>
-                <button id="start-endless-btn" class="small-btn endless-btn" style="display:none">🌙 加班模式</button>
+            <p style="margin:0 0 10px;color:#f1c40f;font-size:15px">接住爹地灑下來的小費，小心那盒適尿通</p>
+            <div class="mode-cards">
+                <div class="mode-card story" id="start-btn">
+                    <div class="mc-icon">🏢</div>
+                    <div class="mc-text">
+                        <div class="mc-name">三關挑戰</div>
+                        <div class="mc-desc">麵包店三關，達標晉級，全過看爹地英姿</div>
+                        <div class="mc-best" id="best-story"></div>
+                    </div>
+                </div>
+                <div class="mode-card trip" id="start-trip-btn">
+                    <div class="mc-icon">🌍</div>
+                    <div class="mc-text">
+                        <div class="mc-name">世界出差</div>
+                        <div class="mc-desc">20 國隨機抽 3 站，每國一個玩法，集護照與特產</div>
+                        <div class="mc-best" id="best-trip"></div>
+                    </div>
+                </div>
+                <div class="mode-card endless locked" id="start-endless-btn">
+                    <div class="mc-icon">🌙</div>
+                    <div class="mc-text">
+                        <div class="mc-name">加班模式</div>
+                        <div class="mc-desc">無盡，每 15 秒一波越撐越難，倒下為止</div>
+                        <div class="mc-best" id="best-endless"></div>
+                    </div>
+                    <div class="mc-lock">🔒 三關全過解鎖</div>
+                </div>
             </div>
             <div class="btn-row">
+                <button id="help-btn" class="small-btn">❓ 怎麼玩</button>
                 <button id="ach-btn" class="small-btn">🏆 成就 0/12</button>
                 <button id="passport-btn" class="small-btn">🛂 護照 0/6</button>
             </div>
             <div id="start-board" class="board"></div>
+        </div>
+
+        <!-- 怎麼玩 -->
+        <div id="help-screen">
+            <h2>❓ 怎麼玩</h2>
+            <p class="instructions" style="margin-top:4px;text-align:left">
+                <span style="color:#5dade2">🎮 滑鼠 / 方向鍵 / WASD / 手指</span>　錢包上下左右都能動<br>
+                💵 接 $10 / $50 / $100 / 💰$500 金鈔，連擊越多倍率越高<br>
+                <span class="height-hint">🚀 錢包越高加成越多（最高 ×1.5）</span><br>
+                📏 過關門檻只算接到的<b>鈔票面額</b>，連擊與高空加成算進小費不算門檻<br>
+                <span style="color:#ffeb3b;font-weight:bold">⚠️ 接到「適尿通」扣 50，爹地頭髮 +1，髮量 9/9 再吃就送醫</span><br>
+                ✂️ 剪刀髮量 −1、🪒 刮鬍刀 −2；漏接藥盒和道具不斷連擊<br>
+                <span style="color:#f1c40f;font-weight:bold"><img class="life-ico" src="assets/life.png" alt=""> 開局三命、最多五命；沒達標或送醫扣一命，接到爹地人頭補一命</span><br>
+                <span style="color:#e74c3c;font-weight:bold">☠️ 命用完 → 結束</span><br>
+                🌍 出差每國有專屬玩法、音樂、特產與一句當地話；護照集滿 20 國與 20 特產
+            </p>
+            <button id="help-close" class="small-btn">返回</button>
         </div>
 
         <!-- 護照畫面 -->
@@ -827,84 +943,144 @@
             { id: 'jp', flag: '🇯🇵', country: '日本',   name: '東京 · 便當陷阱',   img: 'assets/country-japan.jpg',    currency: '¥',
               time: 30, target: 900,  pill: 0.28, spawn: 240, bossMove: 260, speedBase: 3.0, drift: 0,   speedMul: 0.95,
               junk: false, gold: 0.04, tool: 0.05, mech: 'disguise', accent: '#e53e3e',
-              tip: '有些「¥50」其實是藥盒，掉到一半才會露出真面目' },
+              tip: '有些「¥50」其實是藥盒，掉到一半才會露出真面目', tip2: '吃到偽裝藥盒時，一半機率爹地鞠躬道歉、髮量不變' },
             { id: 'mx', flag: '🇲🇽', country: '墨西哥', name: '墨西哥 · 帽子雙軌',  img: 'assets/country-mexico.jpg',   currency: 'MX$',
               time: 30, target: 1000, pill: 0.26, spawn: 420, bossMove: 300, speedBase: 2.8, drift: 0.8, speedMul: 0.9,
               junk: false, gold: 0.05, tool: 0.05, mech: 'dual', accent: '#2e8b57',
-              tip: '掉落物從大帽子兩側同時掉，兩邊都要顧' },
+              tip: '掉落物從大帽子兩側同時掉，兩邊都要顧', tip2: '每 5 連擊帽子會噴一波辣椒藥盒' },
             { id: 'in', flag: '🇮🇳', country: '印度',   name: '印度 · 寶萊塢 S 舞步', img: 'assets/country-india.jpg',  currency: '₹',
               time: 30, target: 900,  pill: 0.27, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 0,   speedMul: 0.9,
               junk: false, gold: 0.05, tool: 0.05, mech: 'sine', accent: '#ff9933',
-              tip: '所有東西都跳 S 形舞步，看準擺回來的時機再接' },
+              tip: '所有東西都跳 S 形舞步，看準擺回來的時機再接', tip2: '金鈔也會跳舞，接到雙倍' },
             { id: 'sc', flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', country: '蘇格蘭', name: '蘇格蘭 · 高地強風',  img: 'assets/country-scotland.jpg', currency: '£',
               time: 30, target: 900,  pill: 0.27, spawn: 290, bossMove: 270, speedBase: 2.9, drift: 0.6, speedMul: 0.9,
               junk: false, gold: 0.05, tool: 0.05, mech: 'wind', accent: '#3b82f6',
-              tip: '風每 5 秒換向，所有東西都會被吹偏，注意畫面上方的風向' },
+              tip: '風每 5 秒換向，所有東西都會被吹偏，注意畫面上方的風向', tip2: '換風後 2 秒內接到的鈔票 ×1.5' },
             { id: 'eg', flag: '🇪🇬', country: '埃及',   name: '埃及 · 法老金庫',   img: 'assets/country-egypt.jpg',    currency: 'E£',
               time: 30, target: 1300, pill: 0.36, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 1.2, speedMul: 0.9,
               junk: false, gold: 0.16, tool: 0.05, mech: 'goldrush', accent: '#d4a017',
-              tip: '金鈔特別多，藥盒也特別多，貪多就秒禿' },
+              tip: '金鈔特別多，藥盒也特別多，貪多就秒禿', tip2: '漏掉的金鈔會被金字塔回收，再掉一次' },
             { id: 'br', flag: '🇧🇷', country: '巴西',   name: '巴西 · 嘉年華彩帶',  img: 'assets/country-brazil.jpg',   currency: 'R$',
               time: 30, target: 1000, pill: 0.27, spawn: 270, bossMove: 250, speedBase: 2.9, drift: 1.5, speedMul: 0.9,
               junk: true,  gold: 0.05, tool: 0.05, mech: 'confetti', accent: '#22c55e',
-              tip: '彩帶會隨時飄過來遮住畫面，被遮住時憑感覺也要接' },
+              tip: '彩帶會隨時飄過來遮住畫面，被遮住時憑感覺也要接', tip2: '彩帶期間接到的鈔票 ×2，賭不賭？' },
             { id: 'kr', flag: '🇰🇷', country: '韓國',   name: '首爾 · 連擊狂熱',   img: 'assets/country-korea.jpg',    currency: '₩',
               time: 30, target: 1000, pill: 0.27, spawn: 270, bossMove: 250, speedBase: 2.9, drift: 1.0, speedMul: 0.9,
               junk: false, gold: 0.05, tool: 0.05, mech: 'kcombo', accent: '#3b5bdb',
-              tip: '連擊倍率翻倍，但斷擊要罰錢：連擊 ×N 斷掉扣 N×10' },
+              tip: '連擊倍率翻倍，但斷擊要罰錢：連擊 ×N 斷掉扣 N×10', tip2: '連擊到 10 爹地跳舞，藥盒暫停 2 秒' },
             { id: 'mn', flag: '🇲🇳', country: '蒙古',   name: '蒙古 · 草原追擊',   img: 'assets/country-mongolia.jpg', currency: '₮',
               time: 30, target: 1000, pill: 0.30, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 0.6, speedMul: 0.9,
               junk: false, gold: 0.05, tool: 0.05, mech: 'homing', accent: '#c0392b',
-              tip: '藥盒會像騎兵一樣朝你的錢包追過來，用速度甩開它' },
+              tip: '藥盒會像騎兵一樣朝你的錢包追過來，用速度甩開它', tip2: '撞到牆的藥盒會折返加速' },
             { id: 'ke', flag: '🇰🇪', country: '肯亞',   name: '肯亞 · 馬拉松爹地',  img: 'assets/country-kenya.jpg',    currency: 'KSh',
               time: 30, target: 1100, pill: 0.22, spawn: 200, bossMove: 110, speedBase: 2.9, drift: 0.4, speedMul: 0.9,
               junk: false, gold: 0.05, tool: 0.05, mech: 'sprint', accent: '#111111',
-              tip: '爹地跑得飛快、撒得又密，落點完全不能預測' },
+              tip: '爹地跑得飛快、撒得又密，落點完全不能預測', tip2: '每 6 連擊衝線，掉一張金鈔' },
             { id: 'cn', flag: '🇨🇳', country: '中國',   name: '北京 · 紅包大放送',  img: 'assets/country-china.jpg',    currency: '¥',
               time: 30, target: 1000, pill: 0.27, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 0.8, speedMul: 0.9,
               junk: false, gold: 0.03, tool: 0.05, mech: 'hongbao', accent: '#de2910',
-              tip: '會掉 🧧 紅包，拆開才知道是 50、100、200、500，還是空包扣 50' },
+              tip: '會掉 🧧 紅包，拆開才知道是 50、100、200、500，還是空包扣 50', tip2: '拆到 500 大吉大利，髮量 -1' },
             { id: 'ng', flag: '🇳🇬', country: '奈及利亞', name: '拉哥斯 · 王子的匯款', img: 'assets/country-nigeria.jpg', currency: '₦',
               time: 30, target: 1000, pill: 0.27, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 0.8, speedMul: 0.9,
               junk: false, gold: 0.14, tool: 0.05, mech: 'fakegold', accent: '#008751',
-              tip: '金鈔特別多，但一半是王子寄來的假支票，接到會斷連擊' },
+              tip: '金鈔特別多，但一半是王子寄來的假支票，接到會斷連擊', tip2: '被騙三次，王子真的匯一張金鈔給你' },
             { id: 'pe', flag: '🇵🇪', country: '秘魯',   name: '馬丘比丘 · 高山缺氧', img: 'assets/country-peru.jpg',     currency: 'S/',
               time: 30, target: 900,  pill: 0.26, spawn: 300, bossMove: 270, speedBase: 2.6, drift: 0.6, speedMul: 0.9,
               junk: false, gold: 0.05, tool: 0.05, mech: 'altitude', basketMax: 400, accent: '#d91023',
-              tip: '海拔太高，錢包只能在畫面上半部活動，反應時間變短但加成一直有' },
+              tip: '海拔太高，錢包只能在畫面上半部活動，反應時間變短但加成一直有', tip2: '高空加成上限提高到 ×2' },
             { id: 'tr', flag: '🇹🇷', country: '土耳其', name: '伊斯坦堡 · 冰淇淋騙術', img: 'assets/country-turkey.jpg',  currency: '₺',
               time: 30, target: 900,  pill: 0.26, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 0.8, speedMul: 0.9,
               junk: false, gold: 0.05, tool: 0.05, mech: 'stretch', accent: '#e30a17',
-              tip: '鈔票掉到一半會突然被收回去再放下來，別太早伸手' },
+              tip: '鈔票掉到一半會突然被收回去再放下來，別太早伸手', tip2: '被收回過的鈔票接到 ×2' },
             { id: 'th', flag: '🇹🇭', country: '泰國',   name: '曼谷 · 雙倍辣度',   img: 'assets/country-thailand.jpg', currency: '฿',
               time: 30, target: 900,  pill: 0.22, spawn: 290, bossMove: 260, speedBase: 2.8, drift: 0.8, speedMul: 0.9,
               junk: false, gold: 0.05, tool: 0.05, mech: 'spicy', accent: '#a51931',
-              tip: '藥盒一次來兩盒並排掉，閃的時候要閃遠一點' },
+              tip: '藥盒一次來兩盒並排掉，閃的時候要閃遠一點', tip2: '接到剪刀或刮鬍刀順便泰式按摩 +$50' },
             { id: 'no', flag: '🇳🇴', country: '挪威',   name: '特羅姆瑟 · 極夜',   img: 'assets/country-norway.jpg',   currency: 'kr',
               time: 30, target: 900,  pill: 0.26, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 0.8, speedMul: 0.9,
               junk: false, gold: 0.05, tool: 0.05, mech: 'dark', accent: '#00205b',
-              tip: '極夜隨時降臨，畫面會暗掉 2 秒，記住東西掉在哪裡' },
+              tip: '極夜隨時降臨，畫面會暗掉 2 秒，記住東西掉在哪裡', tip2: '極夜出現後 5 秒內有極光護盾，連擊不會斷' },
             { id: 'ru', flag: '🇷🇺', country: '俄羅斯', name: '莫斯科 · 俄羅斯娃娃',  img: 'assets/country-russia.jpg',   currency: '₽',
               time: 30, target: 1000, pill: 0.20, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 0.8, speedMul: 0.9,
               junk: false, gold: 0.05, tool: 0.05, mech: 'matryoshka', mega: 0.2, megaAlways: true, accent: '#0039a6',
-              tip: '巨型藥盒從一開始就會來，而且很頻繁，一般藥盒反而少' },
+              tip: '巨型藥盒從一開始就會來，而且很頻繁，一般藥盒反而少', tip2: '躲過的巨型藥盒會分裂成兩顆小的' },
             { id: 'nz', flag: '🇳🇿', country: '紐西蘭', name: '威靈頓 · 地牛翻身',  img: 'assets/country-newzealand.jpg', currency: 'NZ$',
               time: 30, target: 900,  pill: 0.26, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 0.8, speedMul: 0.9,
               junk: false, gold: 0.05, tool: 0.05, mech: 'quake', accent: '#00247d',
-              tip: '每 4 秒一次地震，錢包會被震到旁邊去，震完馬上歸位' },
+              tip: '每 4 秒一次地震，錢包會被震到旁邊去，震完馬上歸位', tip2: '每次地震都會震出一張金鈔' },
             { id: 'fr', flag: '🇫🇷', country: '法國',   name: '巴黎 · 米其林小費',  img: 'assets/country-france.jpg',   currency: '€',
               time: 30, target: 1400, pill: 0.30, spawn: 300, bossMove: 260, speedBase: 2.8, drift: 0.8, speedMul: 0.9,
               junk: false, gold: 0.05, tool: 0.05, mech: 'gourmet', accent: '#0055a4',
-              tip: '只掉 €50 和 €100，沒有小鈔，但門檻高、藥盒也多' },
+              tip: '只掉 €50 和 €100，沒有小鈔，但門檻高、藥盒也多', tip2: '接到 €100 有 20% 爹地說 Merci，髮量 -1' },
             { id: 'ua', flag: '🇺🇦', country: '烏克蘭', name: '基輔 · 向日葵田',   img: 'assets/country-ukraine.jpg',  currency: '₴',
               time: 30, target: 900,  pill: 0.28, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 0.8, speedMul: 0.9,
               junk: false, gold: 0.05, tool: 0.05, mech: 'sunflower', lifeChance: 0.09, lifePerLevel: 5, pillCost: 100, accent: '#ffd700',
-              tip: '補命代幣掉很多（最多 5 個），但藥盒一盒扣 100' },
+              tip: '補命代幣掉很多（最多 5 個），但藥盒一盒扣 100', tip2: '命滿時接到代幣獎金 300' },
             { id: 'es', flag: '🇪🇸', country: '西班牙', name: '塞維亞 · 午睡時間',  img: 'assets/country-spain.jpg',    currency: '€',
               time: 30, target: 900,  pill: 0.26, spawn: 280, bossMove: 260, speedBase: 2.9, drift: 0.8, speedMul: 0.9,
               junk: false, gold: 0.05, tool: 0.05, mech: 'siesta', accent: '#c60b1e',
-              tip: '所有掉落物會隨時停在半空睡 1.2 秒，醒來一起掉下來' }
+              tip: '所有掉落物會隨時停在半空睡 1.2 秒，醒來一起掉下來', tip2: '午睡醒來後接到的第一張鈔票 ×3' }
         ];
+        // 每國補充資料：語言代碼、三句當地話（原文, 中文）、特產（emoji, 名稱）
+        const COUNTRY_EXTRA = {
+            jp: { lang: 'ja-JP', souvenir: ['🍣', '壽司'],
+                  lines: { intro: ['いらっしゃいませ！', '歡迎光臨'], clear: ['お疲れ様でした！', '辛苦了'], fail: ['残念…', '可惜'] } },
+            mx: { lang: 'es-MX', souvenir: ['🌮', '塔可'],
+                  lines: { intro: ['¡Bienvenido, amigo!', '歡迎，朋友'], clear: ['¡Órale, muy bien!', '太棒了'], fail: ['¡Ay, caramba!', '哎呀'] } },
+            in: { lang: 'hi-IN', souvenir: ['🍛', '咖哩'],
+                  lines: { intro: ['नमस्ते!', '你好'], clear: ['शाबाश!', '好極了'], fail: ['अरे यार…', '哎呀老兄'] } },
+            sc: { lang: 'en-GB', souvenir: ['🥃', '威士忌'],
+                  lines: { intro: ['Welcome tae Scotland!', '歡迎來蘇格蘭'], clear: ['Pure dead brilliant!', '超讚'], fail: ['Och, nae luck.', '唉，沒運氣'] } },
+            eg: { lang: 'ar-EG', souvenir: ['🏺', '法老罈'],
+                  lines: { intro: ['أهلاً وسهلاً', '歡迎'], clear: ['ممتاز!', '太棒了'], fail: ['يا خسارة', '真可惜'] } },
+            br: { lang: 'pt-BR', souvenir: ['⚽', '足球'],
+                  lines: { intro: ['Bem-vindo!', '歡迎'], clear: ['Muito bom, parabéns!', '很好，恭喜'], fail: ['Que pena…', '好可惜'] } },
+            kr: { lang: 'ko-KR', souvenir: ['🍲', '泡菜鍋'],
+                  lines: { intro: ['어서 오세요!', '歡迎'], clear: ['대박! 잘했어요!', '太厲害了'], fail: ['아이고…', '哎喲'] } },
+            mn: { lang: 'mn-MN', souvenir: ['🐎', '蒙古馬'],
+                  lines: { intro: ['Тавтай морил!', '歡迎'], clear: ['Маш сайн!', '非常好'], fail: ['Харамсалтай…', '真可惜'] } },
+            ke: { lang: 'sw-KE', souvenir: ['🦒', '長頸鹿'],
+                  lines: { intro: ['Karibu!', '歡迎'], clear: ['Hongera sana!', '恭喜'], fail: ['Pole sana…', '很遺憾'] } },
+            cn: { lang: 'zh-CN', souvenir: ['🐼', '熊貓'],
+                  lines: { intro: ['欢迎欢迎！', '歡迎歡迎'], clear: ['恭喜发财！', '恭喜發財'], fail: ['哎呀，差一点', '哎呀差一點'] } },
+            ng: { lang: 'en-NG', souvenir: ['🥁', '鼓'],
+                  lines: { intro: ['You are welcome o!', '歡迎'], clear: ['Oya, well done!', '做得好'], fail: ['Wahala dey…', '有麻煩了'] } },
+            pe: { lang: 'es-PE', souvenir: ['🦙', '羊駝'],
+                  lines: { intro: ['¡Bienvenido al Perú!', '歡迎來秘魯'], clear: ['¡Chévere!', '讚'], fail: ['Uy, qué pena.', '唉，真可惜'] } },
+            tr: { lang: 'tr-TR', souvenir: ['🍦', '冰淇淋'],
+                  lines: { intro: ['Hoş geldiniz!', '歡迎'], clear: ['Harika! Aferin!', '太棒了'], fail: ['Eyvah…', '糟了'] } },
+            th: { lang: 'th-TH', souvenir: ['🐘', '大象'],
+                  lines: { intro: ['สวัสดีครับ!', '你好'], clear: ['เก่งมาก!', '很棒'], fail: ['เสียดาย…', '可惜'] } },
+            no: { lang: 'nb-NO', souvenir: ['🐟', '鮭魚'],
+                  lines: { intro: ['Velkommen!', '歡迎'], clear: ['Kjempebra!', '超棒'], fail: ['Uff da…', '哎呀'] } },
+            ru: { lang: 'ru-RU', souvenir: ['🪆', '俄羅斯娃娃'],
+                  lines: { intro: ['Добро пожаловать!', '歡迎'], clear: ['Отлично! Молодец!', '太好了'], fail: ['Ой, жаль…', '唉，可惜'] } },
+            nz: { lang: 'en-NZ', souvenir: ['🥝', '奇異果'],
+                  lines: { intro: ['Kia ora!', '你好'], clear: ['Ka pai! Sweet as!', '做得好'], fail: ['Aw, bugger.', '唉，糟糕'] } },
+            fr: { lang: 'fr-FR', souvenir: ['🥐', '可頌'],
+                  lines: { intro: ['Bienvenue !', '歡迎'], clear: ['Magnifique, bravo !', '太精彩了'], fail: ['Oh là là…', '哎呀'] } },
+            ua: { lang: 'uk-UA', souvenir: ['🌻', '向日葵'],
+                  lines: { intro: ['Ласкаво просимо!', '歡迎'], clear: ['Чудово!', '太棒了'], fail: ['Ой, шкода…', '唉，可惜'] } },
+            es: { lang: 'es-ES', souvenir: ['💃', '佛朗明哥'],
+                  lines: { intro: ['¡Bienvenido!', '歡迎'], clear: ['¡Olé! ¡Muy bien!', '好極了'], fail: ['¡Vaya…!', '哎呀'] } }
+        };
+        COUNTRIES.forEach(c => Object.assign(c, COUNTRY_EXTRA[c.id] || {}));
+        function sayLine(lv, key) {
+            if (!lv || !lv.lines) return '';
+            const [native, zh] = lv.lines[key];
+            say(native, lv.lang);
+            return `<span class="lv-say">🗣️ ${native}</span> <span class="lv-tip">（${zh}）</span>`;
+        }
+
+        // 每國第二層機制用的即時狀態
+        let souvenirTimer = null;
+        let fakeCount = 0;             // 奈及利亞：假支票累計
+        let pillPauseUntil = 0;        // 韓國：藥盒暫停到幾點
+        let comboShieldUntil = 0;      // 挪威：極光護盾到幾點
+        let postSiesta = false;        // 西班牙：午睡剛醒
+        let windChangedAt = 0;         // 蘇格蘭：上次換風時間
+        let confettiOn = false;        // 巴西：彩帶是否正在遮
+
         const TRIP_STOPS = 3;          // 一趟出差跑幾國
         let trip = false;              // 目前是否在出差模式
         let tripLevels = [];           // 這趟出差抽到的國家（依序）
@@ -917,6 +1093,7 @@
         const windInd  = document.getElementById('wind-ind');
         const confetti = document.getElementById('confetti');
         function setWind(v) {
+            if (v !== 0) windChangedAt = Date.now();
             windX = v;
             windInd.innerText = v === 0 ? '' : v > 0 ? '💨 →→' : '←← 💨';
             windInd.style.opacity = v === 0 ? '0' : '1';
@@ -924,10 +1101,11 @@
         function showConfetti() {
             confetti.style.top = (18 + Math.random() * 35) + '%';
             confetti.style.opacity = '1';
+            confettiOn = true;
             clearTimeout(confettiTimer);
-            confettiTimer = setTimeout(() => { confetti.style.opacity = '0'; }, 1300);
+            confettiTimer = setTimeout(() => { confetti.style.opacity = '0'; confettiOn = false; }, 1300);
         }
-        function hideConfetti() { clearTimeout(confettiTimer); confetti.style.opacity = '0'; }
+        function hideConfetti() { clearTimeout(confettiTimer); confetti.style.opacity = '0'; confettiOn = false; }
         // 挪威：極夜
         const darkEl = document.getElementById('dark');
         let darkTimer = null;
@@ -944,9 +1122,13 @@
             frozen = true;
             popText(140, 300, '😴 午睡時間', '#f9e79f');
             clearTimeout(frozenTimer);
-            frozenTimer = setTimeout(() => { frozen = false; }, 1200);
+            frozenTimer = setTimeout(() => {
+                frozen = false;
+                postSiesta = true;     // 西班牙第二層：醒來後第一張鈔票 ×3
+                popText(150, 330, '☕ 醒了！下一張 ×3', '#f9e79f');
+            }, 1200);
         }
-        function wakeUp() { clearTimeout(frozenTimer); frozen = false; }
+        function wakeUp() { clearTimeout(frozenTimer); frozen = false; postSiesta = false; }
         // 紐西蘭：地震，畫面晃、錢包被震開
         function quake() {
             container.classList.remove('shake'); void container.offsetWidth;
@@ -955,6 +1137,8 @@
             moveBasket(basketX + (Math.random() < 0.5 ? -1 : 1) * (60 + Math.random() * 60), basketY);
             popText(basketX, basketY - 30, '🌋 地震！', '#e67e22');
             sfx.mega();
+            // 紐西蘭第二層：地震震出一張金鈔
+            if (isPlaying && curLv().mech === 'quake') { spawnItem(0, 'gold'); popText(150, 200, '💰 震出金子！', '#ffd700'); }
         }
         // 出差進行中：四角放國旗、邊框換成該國代表色
         function setCountryFrame(lv) {
@@ -1041,16 +1225,40 @@
 
         // ===== 音效（Web Audio 合成，不用外部檔案）=====
         let audioCtx = null;
-        let muted = load('wyd_muted', false);
-        const muteBtn = document.getElementById('mute-btn');
-        function renderMute() { muteBtn.innerText = muted ? '🔇 靜音' : '🔊 音效'; }
-        renderMute();
-        muteBtn.addEventListener('click', (e) => {
+        // 音效與背景音樂各自開關，分開儲存
+        let sfxMuted = load('wyd_sfx_muted', load('wyd_muted', false));
+        let bgmMuted = load('wyd_bgm_muted', false);
+        const sfxBtn = document.getElementById('sfx-btn');
+        const bgmBtn = document.getElementById('bgm-btn');
+        function renderAudioBar() {
+            sfxBtn.innerText = sfxMuted ? '🔇 音效' : '🔊 音效';
+            bgmBtn.innerText = bgmMuted ? '🔇 音樂' : '🎵 音樂';
+            sfxBtn.classList.toggle('off', sfxMuted);
+            bgmBtn.classList.toggle('off', bgmMuted);
+        }
+        renderAudioBar();
+        sfxBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            muted = !muted; save('wyd_muted', muted); renderMute();
-            if (!muted) { ensureAudio(); sfx.bill(50); if (trip && isPlaying) startMusic(curLv().id); }
-            else stopMusic();
+            sfxMuted = !sfxMuted; save('wyd_sfx_muted', sfxMuted); renderAudioBar();
+            if (!sfxMuted) { ensureAudio(); sfx.bill(50); }
         });
+        bgmBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            bgmMuted = !bgmMuted; save('wyd_bgm_muted', bgmMuted); renderAudioBar();
+            if (bgmMuted) stopMusic();
+            else if (isPlaying) { ensureAudio(); startMusic(currentMusicId()); }
+        });
+        function currentMusicId() { return trip ? curLv().id : endless ? 'endless' : 'story'; }
+        // 該國語言的一句話（瀏覽器有語音合成就唸出來）
+        function say(text, lang) {
+            if (sfxMuted || !text || !window.speechSynthesis) return;
+            try {
+                speechSynthesis.cancel();
+                const u = new SpeechSynthesisUtterance(text);
+                u.lang = lang || 'zh-TW'; u.rate = 1; u.volume = 0.9;
+                speechSynthesis.speak(u);
+            } catch (e) {}
+        }
         function ensureAudio() {
             if (!audioCtx) {
                 try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
@@ -1058,7 +1266,7 @@
             if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
         }
         function tone(freq, dur, type, vol, slideTo, delay) {
-            if (muted || !audioCtx) return;
+            if (sfxMuted || !audioCtx) return;
             const t0 = audioCtx.currentTime + (delay || 0);
             const o = audioCtx.createOscillator();
             const g = audioCtx.createGain();
@@ -1091,6 +1299,11 @@
         // melody：[MIDI 音高, 拍數]，0 = 休止；bass：每拍一個音，循環到旋律長度
         // 若某國有 track: 'assets/music/xx.mp3'，會改用該音檔循環播放（需自備授權音樂）
         const MUSIC = {
+            // 故事三關：麵包店輕快小調；加班：緊張的小調
+            story:   { bpm: 120, wave: 'triangle', bass: [48, 55, 52, 55],
+                       melody: [[72,.5],[76,.5],[79,1],[76,.5],[72,.5],[74,1],[71,.5],[74,.5],[77,1],[76,.5],[74,.5],[72,1],[69,.5],[71,.5],[72,2]] },
+            endless: { bpm: 140, wave: 'square',   bass: [45, 45, 52, 45, 48, 48, 52, 48],
+                       melody: [[69,.5],[69,.5],[72,.5],[71,.5],[69,.5],[67,.5],[65,1],[67,.5],[69,.5],[72,.5],[74,.5],[72,.5],[71,.5],[69,1],[64,.5],[65,.5],[67,.5],[69,.5],[71,.5],[72,.5],[71,1]] },
             jp: { bpm: 92,  wave: 'triangle', bass: [50, 0, 57, 0],
                   melody: [[69,1],[70,1],[69,.5],[65,.5],[64,1],[62,2],[64,1],[65,1],[69,2],[74,1],[70,1],[69,2]] },
             mx: { bpm: 150, wave: 'square',   bass: [48, 55, 55, 48, 55, 55],
@@ -1147,7 +1360,7 @@
         }
         function startMusic(id) {
             stopMusic();
-            const m = MUSIC[id]; if (!m || muted) return;
+            const m = MUSIC[id]; if (!m || bgmMuted) return;
             musicId = id;
             if (m.track) {                       // 真實音檔
                 musicAudio = new Audio(m.track);
@@ -1217,7 +1430,8 @@
             { id: 'rich',    icon: '🏦', name: '萬元戶',     desc: '單場總小費超過 $10000' },
             { id: 'fullhp',  icon: '💖', name: '一命未丟',   desc: '一條命都沒用就過三關' },
             { id: 'trip1',   icon: '✈️', name: '第一次出差', desc: '完成一趟世界出差' },
-            { id: 'passport', icon: '🛂', name: '環遊世界',   desc: '護照集滿所有國家的印章' }
+            { id: 'passport', icon: '🛂', name: '環遊世界',   desc: '護照集滿所有國家的印章' },
+            { id: 'souvenirs', icon: '🎁', name: '伴手禮大王', desc: '集滿 20 國特產' }
         ];
 
         // ===== 護照（出差過的國家）=====
@@ -1241,13 +1455,29 @@
             }
             if (passportCount() >= COUNTRIES.length) unlock('passport');
         }
+        // 特產收集
+        let souvenirs = load('wyd_souvenirs', {});
+        function souvenirCount() { return COUNTRIES.filter(c => souvenirs[c.id]).length; }
+        function collectSouvenir(c) {
+            const first = !souvenirs[c.id];
+            if (first) {
+                souvenirs[c.id] = true;
+                save('wyd_souvenirs', souvenirs);
+                toast(`🎁 特產入袋：${c.souvenir[0]} ${c.country}${c.souvenir[1]}`);
+            }
+            if (souvenirCount() >= COUNTRIES.length) unlock('souvenirs');
+            return first;
+        }
         function renderPassport() {
+            document.getElementById('passport-screen').querySelector('h2').innerText =
+                `🛂 爹地的護照　${passportCount()}/${COUNTRIES.length} 國 · 特產 ${souvenirCount()}/${COUNTRIES.length}`;
             document.getElementById('pp-grid').innerHTML = COUNTRIES.map(c => `
                 <div class="pp-item ${passport[c.id] ? '' : 'locked'}">
                     <img src="${c.img}" alt="">
                     <div class="pp-stamp">已到訪</div>
+                    ${souvenirs[c.id] ? `<div class="pp-souvenir" title="${c.souvenir[1]}">${c.souvenir[0]}</div>` : ''}
                     <div class="pp-name">${c.flag} ${c.country}</div>
-                    <div class="pp-mech">${c.name.split('·').pop().trim()}</div>
+                    <div class="pp-mech">${c.name.split('·').pop().trim()}${souvenirs[c.id] ? '' : ' · 特產 ' + c.souvenir[0] + '?'}</div>
                 </div>`).join('');
         }
         passportBtn.addEventListener('click', () => {
@@ -1328,8 +1558,23 @@
         const overEndlessBtn  = document.getElementById('over-endless-btn');
         const clockoutBtn     = document.getElementById('clockout-btn');
         function renderEndlessUnlock() {
-            startEndlessBtn.style.display = load('wyd_endless', false) ? 'block' : 'none';
+            startEndlessBtn.classList.toggle('locked', !load('wyd_endless', false));
+            renderBests();
         }
+        // 模式卡片上的個人最佳
+        function renderBests() {
+            const b = (mode) => { const r = getBoard(mode)[0]; return r ? `最佳 ${fmtMoney(r.score)}（${r.name}）` : '尚無紀錄'; };
+            document.getElementById('best-story').innerText = b('story');
+            document.getElementById('best-trip').innerText = b('trip');
+            const e = getBoard('endless')[0];
+            document.getElementById('best-endless').innerText = e ? `最佳 ${fmtMoney(e.score)} · ${e.sec}s（${e.name}）` : '尚無紀錄';
+        }
+        document.getElementById('help-btn').addEventListener('click', () => {
+            document.getElementById('help-screen').style.display = 'flex';
+        });
+        document.getElementById('help-close').addEventListener('click', () => {
+            document.getElementById('help-screen').style.display = 'none';
+        });
         renderEndlessUnlock();
 
         const containerWidth = 400;
@@ -1339,6 +1584,11 @@
 
         let combo = 0;
         function resetCombo() {
+            // 挪威：極光護盾期間連擊不斷
+            if (isPlaying && combo > 0 && Date.now() < comboShieldUntil) {
+                popText(basketX - 20, basketY - 76, '🌌 極光護住了連擊！', '#aee3ff');
+                return;
+            }
             // 韓國：斷擊罰錢（連擊 ×N 斷掉扣 N×10）
             if (isPlaying && combo >= 3 && curLv().mech === 'kcombo') {
                 const fine = combo * 10;
@@ -1353,6 +1603,23 @@
             if (combo >= 2) { showComboFlash(); sfx.combo(combo); }
             if (combo >= 10) unlock('combo10');
             if (combo >= 20) unlock('combo20');
+            if (!isPlaying || !trip) return;
+            const m = curLv().mech;
+            // 墨西哥第二層：每 5 連擊，帽子噴一波辣椒藥盒
+            if (m === 'dual' && combo % 5 === 0) {
+                spawnItem(-1, 'pill'); spawnItem(1, 'pill'); spawnItem(0, 'pill');
+                popText(140, 200, '🌶️ 辣椒雨！', '#e74c3c'); sfx.warn();
+            }
+            // 韓國第二層：連擊到 10，爹地跳舞，藥盒暫停 2 秒
+            if (m === 'kcombo' && combo === 10) {
+                pillPauseUntil = Date.now() + 2000;
+                popText(120, 300, '💃 爹地跳舞，藥盒暫停 2 秒', '#ff9ff3'); sfx.gold();
+            }
+            // 肯亞第二層：每 6 連擊衝線，掉一張金鈔
+            if (m === 'sprint' && combo % 6 === 0) {
+                spawnItem(0, 'gold');
+                popText(140, 200, '🏃 衝線獎金！', '#ffd700');
+            }
         }
 
         function showComboFlash() {
@@ -1392,7 +1659,8 @@
         // 高空加成：錢包在最低點 ×1.0，最高點 ×1.5，線性
         function heightBonus() {
             const f = (BASKET_MAX_Y - basketY) / (BASKET_MAX_Y - BASKET_MIN_Y);
-            return 1 + 0.5 * Math.max(0, Math.min(1, f));
+            const max = (trip && curLv().mech === 'altitude') ? 1.0 : 0.5;   // 秘魯第二層：高空加成最高 ×2
+            return 1 + max * Math.max(0, Math.min(1, f));
         }
 
         // ===== 命 =====
@@ -1532,6 +1800,9 @@
                 `目標：實收面額 <span style="color:#f1c40f">$${lv.target}</span>　限時 ${lv.time} 秒<br>` +
                 `<span class="lv-tip">門檻只算接到的鈔票面額，連擊與高空加成算進小費不算門檻</span><br>` +
                 `<span style="color:#f39c12;font-weight:bold">⭐ 本關特色：</span><span class="lv-tip" style="color:#ecf0f1">${lv.tip}</span><br>` +
+                (lv.tip2 ? `<span style="color:#f39c12;font-weight:bold">✨ 隱藏玩法：</span><span class="lv-tip" style="color:#ecf0f1">${lv.tip2}</span><br>` : '') +
+                (trip && lv.souvenir ? `<span class="lv-tip">🎁 特產 ${lv.souvenir[0]} ${lv.souvenir[1]} 會在本關出現一次，接到 +$300 並收進護照</span><br>` : '') +
+                (trip ? sayLine(lv, 'intro') + '<br>' : '') +
                 `目前髮量 <span style="color:#f5b041">${hairLevel + 1}/9</span>　` +
                 `已存 <span style="color:#2ecc71">${fmtMoney(bank)}</span>　${livesHtml()}`;
             levelBtn.innerText = '開工';
@@ -1585,6 +1856,11 @@
             }
             levelScreen.style.display = 'none';
             gameOverScreen.style.display = 'none';
+            if (!trip) startMusic(endless ? 'endless' : 'story');
+            // 出差：每關必掉一個特產，8 到 20 秒之間隨機出現
+            clearTimeout(souvenirTimer);
+            if (trip) souvenirTimer = setTimeout(() => spawnItem(0, 'souvenir'), 8000 + Math.random() * 12000);   // 已收集過也掉，當獎金
+            fakeCount = 0; pillPauseUntil = 0; comboShieldUntil = 0; postSiesta = false;
 
             gameInterval = setInterval(() => {
                 if (endless) {
@@ -1611,7 +1887,11 @@
                     sfx.warn();
                 }
                 if (mech === 'confetti' && timeLeft > 1 && Math.random() < 0.22) showConfetti();
-                if (mech === 'dark' && timeLeft > 2 && Math.random() < 0.2) showDark();
+                if (mech === 'dark' && timeLeft > 2 && Math.random() < 0.2) {
+                    showDark();
+                    comboShieldUntil = Date.now() + 5000;   // 挪威第二層：極光護盾，5 秒內連擊不會斷
+                    popText(140, 330, '🌌 極光護盾 5 秒', '#aee3ff');
+                }
                 if (mech === 'siesta' && timeLeft > 1 && Math.random() < 0.18) siesta();
                 if (mech === 'quake' && timeLeft > 0 && timeLeft % 4 === 0) quake();
                 if (timeLeft <= 0) endLevel();
@@ -1648,6 +1928,7 @@
             setWind(0); hideConfetti(); hideDark(); wakeUp();
             setCountryFrame(null);
             stopMusic();
+            clearTimeout(souvenirTimer);
             clearItems();
             clockoutBtn.style.display = 'none';
         }
@@ -1665,7 +1946,7 @@
                 sfx.clear();
                 if (pillsThisLevel === 0) unlock('clean');
                 if (trip) stampPassport(lv.id);           // 每過一國就蓋章
-                if (trip && levelIdx === lastLevelIdx()) { unlock('trip1'); finish('tripclear'); return; }
+                if (trip && levelIdx === lastLevelIdx()) { unlock('trip1'); say(lv.lines.clear[0], lv.lang); finish('tripclear'); return; }
                 if (!trip && levelIdx === WIN_AFTER_LEVEL) {
                     // 三關全過：解鎖加班模式與相關成就，再播影片
                     save('wyd_endless', true);
@@ -1680,6 +1961,7 @@
                 levelIdx++;
                 levelTitle.innerText = '✅ 過關！';
                 levelBody.innerHTML =
+                    (trip ? sayLine(lv, 'clear') + '<br>' : '') +
                     `實收 <span style="color:#2ecc71">${fmtMoney(raw)}</span>　小費 <span style="color:#f1c40f">${fmtMoney(score)}</span>　` +
                     `累積 <span style="color:#2ecc71">${fmtMoney(bank)}</span><br>` +
                     `髮量 <span style="color:#f5b041">${hairLevel + 1}/9</span>　` +
@@ -1695,6 +1977,7 @@
                 sfx.fail();
                 levelTitle.innerText = '❌ 爹地收手了';
                 levelBody.innerHTML =
+                    (trip ? sayLine(lv, 'fail') + '<br>' : '') +
                     `實收面額只有 <span style="color:#e74c3c">${fmtMoney(raw)}</span>，` +
                     `差 <span style="color:#e74c3c">${fmtMoney(lv.target - raw)}</span><br>` +
                     `用掉一命 → 剩 ${livesHtml()}<br>` +
@@ -1745,10 +2028,12 @@
             if (reason === 'tripclear') {
                 h2.innerText = '🛂 出差圓滿！';
                 const flags = tripLevels.map(l => l.flag).join(' ');
+                const last = tripLevels[tripLevels.length - 1];
                 finalScore.innerHTML =
                     `${flags}<br>` +
+                    `<span class="lv-say">🗣️ ${last.lines.clear[0]}</span><br>` +
                     `三站小費 <span style="color:#f1c40f">${fmtMoney(total)}</span>　髮量 ${hairLevel + 1}/9<br>` +
-                    `<span style="font-size:15px;color:#bdc3c7">護照已蓋 ${passportCount()}/${COUNTRIES.length} 國</span>`;
+                    `<span style="font-size:15px;color:#bdc3c7">護照 ${passportCount()}/${COUNTRIES.length} 國　特產 ${souvenirCount()}/${COUNTRIES.length}</span>`;
                 finalScore.style.color = '#f1c40f';
                 sfx.clear();
             } else if (endless) {
@@ -1824,6 +2109,7 @@
             const idx = addScore(pendingEntry.mode, pendingEntry.entry);
             renderBoard(overBoard, pendingEntry.mode, idx);
             renderBoard(startBoard, 'story', -1);
+            renderBests();
             nameEntry.style.display = 'none';
             pendingEntry = null;
             sfx.gold();
@@ -2022,6 +2308,11 @@
                     item.remove();
                     dodgesThisRun++;
                     if (dodgesThisRun >= 5) unlock('dodge5');
+                    // 俄羅斯第二層：躲過的巨型藥盒分裂成兩顆小藥盒
+                    if (lv.mech === 'matryoshka') {
+                        spawnItem(0, 'pill', megaX); spawnItem(0, 'pill', megaX + pw - 76);
+                        popText(megaX + 40, 200, '🪆 分裂！', '#e74c3c');
+                    }
                     megaCooldownFor(1500);
                     return;
                 }
@@ -2031,9 +2322,11 @@
         }
 
         // offset：-1 / 1 = 墨西哥雙軌的左右側，0 = 正常從爹地中間掉
-        function spawnItem(offset) {
+        // forceType：'pill' | 'gold' | 'souvenir' 指定掉什麼；forceX：指定起始 x
+        function spawnItem(offset, forceType, forceX) {
             offset = offset || 0;
             if (!isPlaying) return;
+            if (forceType) return spawnForced(offset, forceType, forceX);
             // 巨型藥盒：故事／出差在分數達到當關目標 50% 後 8%；加班模式 30 秒後 4%
             const lv0 = curLv();
             const megaReady = endless ? elapsed >= 30 : (lv0.megaAlways || raw >= lv0.target * 0.5);
@@ -2046,9 +2339,23 @@
             const item = document.createElement('div');
             item.classList.add('falling-item');
 
-            const rand = Math.random();
+            let rand = Math.random();
             let type, value = 0;
             let speed = (Math.random() * 3 + lv.speedBase) * lv.speedMul;
+            return buildItem(item, lv, rand, speed, offset, null, null);
+        }
+
+        // 指定類型的生成（機制用）：藥盒 / 金鈔 / 特產
+        function spawnForced(offset, forceType, forceX) {
+            const lv = curLv();
+            const item = document.createElement('div');
+            item.classList.add('falling-item');
+            let speed = (Math.random() * 3 + lv.speedBase) * lv.speedMul;
+            return buildItem(item, lv, null, speed, offset, forceType, forceX);
+        }
+
+        function buildItem(item, lv, rand, speed, offset, forceType, forceX) {
+            let type, value = 0;
 
             // 機率累加：藥盒 → 道具 → 金色鈔票 → 干擾小鈔 → 一般鈔票
             // 藥盒機率和速度隨連擊等比增加
@@ -2063,7 +2370,20 @@
             const p_hongbao = p_gold + (lv.mech === 'hongbao' ? 0.08 : 0);   // 中國：紅包
             const p_junk = p_hongbao + (lv.junk ? 0.25 : 0);
 
-            if (rand < p_pill) {
+            // 指定類型：把 rand 落到對應區間
+            if (forceType === 'pill') rand = 0;
+            else if (forceType === 'gold') rand = p_tool + 0.0001;
+            // 韓國第二層：跳舞期間藥盒改成鈔票
+            if (rand !== null && Date.now() < pillPauseUntil && rand < p_pill && !forceType) rand = p_hongbao + 0.0001;
+
+            if (forceType === 'souvenir') {
+                // 出差特產：每關一次，慢慢飄下來
+                item.classList.add('tool', 'souvenir-item');
+                item.innerText = lv.souvenir ? lv.souvenir[0] : '🎁';
+                type = 'souvenir';
+                speed = Math.max(1.6, speed * 0.55);
+
+            } else if (rand < p_pill) {
                 item.classList.add('pill-box');
                 type = 'pill';
                 speed += 1 + comboPillSpd;
@@ -2139,11 +2459,13 @@
                 item.style.backgroundImage = `url('${BILLS['50']}')`;
                 item.innerText = cur + '50';
             }
+            const wasDisguised = disguised;     // 日本第二層用：這顆是不是偽裝過的
 
             const bossLeft = parseFloat(boss.style.left) || 170;
-            item.style.left = (bossLeft + bossWidth / 2 - 15 + offset * 48) + 'px';
+            item.style.left = (forceX != null ? forceX : (bossLeft + bossWidth / 2 - 15 + offset * 48)) + 'px';
             item.style.top = '125px';
             container.appendChild(item);
+            let recycled = false, boosted = false;   // 埃及：金鈔回收過；蒙古：藥盒撞牆加速過
 
             let topPos = 125;
             // 斜線：關卡一為 0（垂直），二、三所有掉落物都會斜著走
@@ -2181,6 +2503,8 @@
                     // 蒙古：藥盒朝錢包 x 追過來
                     const target = basketX + basketWidth / 2 - w / 2;
                     x += Math.sign(target - x) * Math.min(1.4, Math.abs(target - x));
+                    // 蒙古第二層：撞到牆的藥盒像騎兵折返，速度 ×1.3
+                    if ((x <= 0 || x >= containerWidth - w) && !boosted) { boosted = true; speed *= 1.3; popText(x, topPos - 20, '🐎 加速！', '#e67e22'); }
                     x = Math.max(0, Math.min(containerWidth - w, x));
                     item.style.left = x + 'px';
                 } else if (drift || windX) {
@@ -2217,8 +2541,17 @@
                             overdoseHit();
                             return;
                         }
-                        setHair(hairLevel + 1);
-                        popText(px, py, `-$${lv.pillCost || 50}`, '#e74c3c');
+                        // 日本第二層：偽裝藥盒有一半機率爹地鞠躬道歉，髮量不變
+                        if (wasDisguised && Math.random() < 0.5) popText(px - 20, py, '🙇 すみません！髮量不變', '#f9e79f');
+                        else setHair(hairLevel + 1);
+                        popText(px, py + 18, `-$${lv.pillCost || 50}`, '#e74c3c');
+
+                    } else if (type === 'souvenir') {
+                        // 出差特產：+$300，收進護照
+                        score += 300;
+                        const first = collectSouvenir(lv);
+                        popText(px - 20, py, `${lv.souvenir[0]} ${lv.souvenir[1]}${first ? ' 入袋' : ''} +$300`, '#fff');
+                        sfx.ach();
 
                     } else if (type === 'hongbao') {
                         // 中國：拆紅包，50 / 100 / 200 / 500，或空包扣 50
@@ -2233,11 +2566,17 @@
                             score += v; raw += v; addCombo();
                             (v >= 200 ? sfx.gold : sfx.bill)(v);
                             popText(px, py, `🧧 +$${v}`, v >= 200 ? '#ffd700' : '#ff6b6b');
+                            // 中國第二層：拆到 500 大吉大利，髮量 -1
+                            if (v === 500 && hairLevel > 0) { setHair(hairLevel - 1); popText(px - 10, py - 20, '🎊 大吉大利 髮量-1', '#ffd700'); }
                         }
 
                     } else if (type === 'life') {
                         if (lives < MAX_LIVES) { lives++; renderLives(); popText(px, py, '+1 命！', '#f1c40f'); }
-                        else { score += LIFE_FULL_BONUS; popText(px, py, `命已滿 +$${LIFE_FULL_BONUS}`, '#f1c40f'); }
+                        else {
+                            // 烏克蘭第二層：命滿時代幣獎金 300
+                            const bonus = lv.mech === 'sunflower' ? 300 : LIFE_FULL_BONUS;
+                            score += bonus; popText(px, py, `命已滿 +$${bonus}${bonus > LIFE_FULL_BONUS ? ' 🌻' : ''}`, '#f1c40f');
+                        }
                         sfx.gold();
                         // 不影響連擊
 
@@ -2250,6 +2589,8 @@
                             popText(px, py, `髮量 -${actual}`, type === 'razor' ? '#9b59b6' : '#5dade2');
                         } else popText(px, py, '已經很茂密了', '#95a5a6');
                         sfx.tool();
+                        // 泰國第二層：接到道具順便泰式按摩 +$50
+                        if (lv.mech === 'spicy') { score += 50; raw += 50; popText(px, py + 18, '💆 泰式按摩 +$50', '#2ecc71'); }
                         // 道具不加分、不算連擊、不中斷連擊
 
                     } else if (type === 'junk') {
@@ -2266,18 +2607,32 @@
                             if (combo >= 3) popText(px - 10, py - 18, `連擊 ×${combo} 斷了`, '#e74c3c');
                             resetCombo(); sfx.junk();
                             popText(px - 30, py, '💸 王子的支票…是假的', '#95a5a6');
+                            // 奈及利亞第二層：被騙三次，王子真的匯一筆
+                            fakeCount++;
+                            if (fakeCount % 3 === 0) { spawnItem(0, 'gold'); popText(120, 200, '👑 王子真的匯款了！', '#ffd700'); }
                             updateScore(); item.remove(); return;
                         }
                         // 一般鈔票與金鈔：連擊倍率 × 高空加成（韓國：連擊倍率翻倍）
                         const mul = comboMultiplier() * (lv.mech === 'kcombo' && combo >= 2 ? 2 : 1);
                         const hb  = heightBonus();
-                        const gain = Math.round(value * mul * hb);
+                        let gain = Math.round(value * mul * hb);
+                        let tag = '';
+                        // 各國第二層加成
+                        if (lv.mech === 'sine' && type === 'gold')                       { gain *= 2; tag += ' 💃×2'; }   // 印度：金鈔跳舞雙倍
+                        if (lv.mech === 'wind' && Date.now() - windChangedAt < 2000)      { gain = Math.round(gain * 1.5); tag += ' 🌬️×1.5'; }   // 蘇格蘭：換風 2 秒內
+                        if (lv.mech === 'confetti' && confettiOn)                        { gain *= 2; tag += ' 🎉×2'; }   // 巴西：彩帶期間
+                        if (lv.mech === 'stretch' && stretched)                          { gain *= 2; tag += ' 🍦×2'; }   // 土耳其：被收回過
+                        if (lv.mech === 'siesta' && postSiesta)                          { gain *= 3; tag += ' ☕×3'; postSiesta = false; }   // 西班牙：醒來第一張
                         score += gain;
                         raw += value;      // 門檻只算面額
                         addCombo();
                         const high = hb >= 1.15;
-                        popText(px, py, `+$${gain}${high ? ' ↑' : ''}`,
+                        popText(px, py, `+$${gain}${high ? ' ↑' : ''}${tag}`,
                                 type === 'gold' ? '#ffd700' : high ? '#5dade2' : '#2ecc71');
+                        // 法國第二層：接到 €100 有 20% 爹地說 Merci，髮量 -1
+                        if (lv.mech === 'gourmet' && value >= 100 && hairLevel > 0 && Math.random() < 0.2) {
+                            setHair(hairLevel - 1); popText(px, py - 20, '🥐 Merci ! 髮量-1', '#f9e79f');
+                        }
                         if (type === 'gold') {
                             sfx.gold();
                             goldThisRun++;
@@ -2293,7 +2648,13 @@
                 }
 
                 if (topPos > 600) {
-                    if (type !== 'pill' && type !== 'scissors' && type !== 'razor' && type !== 'life') {
+                    // 埃及第二層：漏掉的金鈔被金字塔回收，從頂端再掉一次
+                    if (lv.mech === 'goldrush' && type === 'gold' && !recycled) {
+                        recycled = true; topPos = 125;
+                        popText(x, 150, '🔺 金字塔回收', '#ffd700');
+                        requestAnimationFrame(fall); return;
+                    }
+                    if (type !== 'pill' && type !== 'scissors' && type !== 'razor' && type !== 'life' && type !== 'souvenir') {
                         if (combo >= 3) popText(x, 560, `連擊 ×${combo} 斷了`, '#e74c3c');
                         resetCombo();
                     }
@@ -2344,7 +2705,10 @@
         startBtn.addEventListener('click', newGame);
         restartBtn.addEventListener('click', () => trip ? newTrip() : newGame());
         document.getElementById('start-trip-btn').addEventListener('click', newTrip);
-        startEndlessBtn.addEventListener('click', newEndless);
+        startEndlessBtn.addEventListener('click', () => {
+            if (startEndlessBtn.classList.contains('locked')) { toast('🔒 先把三關全過，才能來加班'); return; }
+            newEndless();
+        });
         overEndlessBtn.addEventListener('click', continueEndless);
         clockoutBtn.addEventListener('click', (e) => {
             e.stopPropagation();
