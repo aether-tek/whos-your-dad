@@ -1657,7 +1657,13 @@
                 `<div class="ppd-row"><b>🎁 特產：</b>${c.souvenir[0]} ${c.souvenir[1]}${got ? '（已收集）' : '（尚未收集）'}</div>` +
                 (visited ? '' : `<div class="ppd-locked">🔒 還沒去過這個國家</div>`);
             playVoice(c.id, 'intro', c.lines.intro[0], c.lang);
-            document.getElementById('pp-detail').style.display = 'flex';
+            const pd = document.getElementById('pp-detail');
+            // 背景放該國爹地照，蓋一層暗色讓卡片字看得清楚
+            pd.style.backgroundImage =
+                `linear-gradient(rgba(0,0,0,0.78), rgba(0,0,0,0.6)), url('${c.img}${AV}')`;
+            pd.style.backgroundSize = 'cover';
+            pd.style.backgroundPosition = 'center 20%';
+            pd.style.display = 'flex';
         }
         passportBtn.addEventListener('click', () => {
             renderPassport();
