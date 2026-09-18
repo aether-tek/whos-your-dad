@@ -457,6 +457,18 @@
         .corner-btn:hover { background: rgba(0,0,0,0.85); transform: none; }
         #mute-btn     { left: 6px; }
         #clockout-btn { right: 6px; display: none; background: rgba(192,57,43,0.8); }
+        #quit-btn { top: 86px; bottom: auto; right: 6px; display: none; background: rgba(52,73,94,0.85); z-index: 17; }
+        #confirm-screen {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.75);
+            display: none; align-items: center; justify-content: center; z-index: 45;
+        }
+        #confirm-screen .cf-card {
+            background: #1c2833; border: 3px solid #f1c40f; border-radius: 14px;
+            padding: 18px 20px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        }
+        #confirm-screen .cf-title { font-size: 18px; font-weight: bold; color: #f1c40f; }
+        #confirm-screen .cf-note { font-size: 13px; color: #bdc3c7; margin: 6px 0 2px; }
+        #confirm-screen .cf-row { display: flex; gap: 10px; justify-content: center; }
 
         /* ── 次要按鈕 ── */
         .small-btn {
@@ -822,6 +834,19 @@
 
         <!-- 角落按鈕 -->
         <button id="clockout-btn" class="corner-btn">🏁 下班結算</button>
+        <button id="quit-btn" class="corner-btn">🏠 主畫面</button>
+
+        <!-- 離開確認 -->
+        <div id="confirm-screen">
+            <div class="cf-card">
+                <div class="cf-title">🏠 離開回主畫面？</div>
+                <div class="cf-note">目前這關的進度不會記分</div>
+                <div class="cf-row">
+                    <button id="cf-yes" class="small-btn" style="background:#c0392b">確定離開</button>
+                    <button id="cf-no" class="small-btn" style="background:#2ecc71">繼續玩</button>
+                </div>
+            </div>
+        </div>
 
         <!-- 音效 / 音樂 各自開關，蓋在所有畫面之上 -->
         <div id="audio-bar">
@@ -1328,6 +1353,7 @@
 
         // ===== 加班模式（無盡）=====
         let endless = false;   // 目前是否在加班模式
+        let paused = false;    // 離開確認視窗開啟時暫停關卡
         let elapsed = 0;       // 加班秒數
 
         // 難度隨秒數爬升，全部以 elapsed 為輸入，每次生成都重新讀
@@ -1753,6 +1779,33 @@
         const startEndlessBtn = document.getElementById('start-endless-btn');
         const overEndlessBtn  = document.getElementById('over-endless-btn');
         const clockoutBtn     = document.getElementById('clockout-btn');
+        const quitBtn         = document.getElementById('quit-btn');
+        // 中斷目前關卡，直接回主畫面（不記分）
+        function returnToMenu() {
+            stopLevel();
+            levelScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            document.getElementById('pp-detail').style.display = 'none';
+            document.getElementById('ach-screen').style.display = 'none';
+            document.getElementById('passport-screen').style.display = 'none';
+            document.getElementById('help-screen').style.display = 'none';
+            renderEndlessUnlock();
+            startScreen.style.display = 'flex';
+        }
+        // 離開前先詢問，等待期間暫停關卡
+        const confirmScreen = document.getElementById('confirm-screen');
+        function askQuit() {
+            if (!isPlaying) { returnToMenu(); return; }
+            paused = true;
+            confirmScreen.style.display = 'flex';
+        }
+        function resumeFromConfirm() {
+            confirmScreen.style.display = 'none';
+            paused = false;
+        }
+        quitBtn.addEventListener('click', (e) => { e.stopPropagation(); askQuit(); });
+        document.getElementById('cf-yes').addEventListener('click', () => { confirmScreen.style.display = 'none'; paused = false; returnToMenu(); });
+        document.getElementById('cf-no').addEventListener('click', resumeFromConfirm);
         function renderEndlessUnlock() {
             startEndlessBtn.classList.toggle('locked', !load('wyd_endless', false));
             renderBests();
@@ -2069,6 +2122,7 @@
             }
             levelScreen.style.display = 'none';
             gameOverScreen.style.display = 'none';
+            quitBtn.style.display = 'block';     // 任何模式進行中都能中斷回主畫面
             if (!trip) startMusic(endless ? 'endless' : 'story');
             // 出差：每關必掉一個特產，8 到 20 秒之間隨機出現
             clearTimeout(souvenirTimer);
@@ -2076,6 +2130,7 @@
             fakeCount = 0; pillPauseUntil = 0; comboShieldUntil = 0; postSiesta = false;
 
             gameInterval = setInterval(() => {
+                if (paused) return;
                 if (endless) {
                     elapsed++;
                     timeDisplay.innerText = `${elapsed}s`;
@@ -2124,11 +2179,13 @@
 
         function scheduleBoss() {
             if (!isPlaying) return;
+            if (paused) { bossTimer = setTimeout(scheduleBoss, 200); return; }
             boss.style.left = Math.random() * (containerWidth - bossWidth) + 'px';
             bossTimer = setTimeout(scheduleBoss, curLv().bossMove);
         }
         function scheduleSpawn() {
             if (!isPlaying) return;
+            if (paused) { spawnTimer = setTimeout(scheduleSpawn, 200); return; }
             const mech = curLv().mech;
             if (mech === 'dual') { spawnItem(-1); spawnItem(1); }   // 墨西哥：帽子兩側同時掉
             else {
@@ -2152,6 +2209,9 @@
             clearTimeout(souvenirTimer);
             clearItems();
             clockoutBtn.style.display = 'none';
+            quitBtn.style.display = 'none';
+            paused = false;
+            document.getElementById('confirm-screen').style.display = 'none';
         }
 
         function clearItems() {
@@ -2521,6 +2581,7 @@
 
             function sweep() {
                 if (!isPlaying) { item.remove(); megaCooldown = false; return; }
+                if (paused) { requestAnimationFrame(sweep); return; }
                 topPos += speed;
                 item.style.top = topPos + 'px';
                 // 左右搖擺，碰牆反彈
@@ -2743,6 +2804,7 @@
 
             function fall() {
                 if (!isPlaying) { item.remove(); return; }
+                if (paused) { requestAnimationFrame(fall); return; }
                 if (frozen) { requestAnimationFrame(fall); return; }   // 西班牙：午睡，全部停住
                 topPos += speed;
                 // 土耳其：鈔票掉到一半被收回去一段，再放下來
@@ -3003,7 +3065,10 @@
             if (endless && isPlaying) finish('clockout');
         });
         window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && endless && isPlaying) finish('clockout');
+            if (e.key === 'Escape') {
+                if (confirmScreen.style.display === 'flex') resumeFromConfirm();
+                else if (isPlaying) askQuit();
+            }
         });
         replayBtn.addEventListener('click', () => {
             gameOverScreen.style.display = 'none';
