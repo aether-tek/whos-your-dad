@@ -1048,7 +1048,8 @@
         muteBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             muted = !muted; save('wyd_muted', muted); renderMute();
-            if (!muted) { ensureAudio(); sfx.bill(50); }
+            if (!muted) { ensureAudio(); sfx.bill(50); if (trip && isPlaying) startMusic(curLv().id); }
+            else stopMusic();
         });
         function ensureAudio() {
             if (!audioCtx) {
@@ -1085,6 +1086,100 @@
             warn()   { tone(880, 0.1, 'square', 0.1); tone(880, 0.1, 'square', 0.1, null, 0.15); },
             wave()   { [523, 784].forEach((f, i) => tone(f, 0.1, 'triangle', 0.12, null, i * 0.1)); }
         };
+
+        // ===== 各國背景音樂（Web Audio 合成，循環播放）=====
+        // melody：[MIDI 音高, 拍數]，0 = 休止；bass：每拍一個音，循環到旋律長度
+        // 若某國有 track: 'assets/music/xx.mp3'，會改用該音檔循環播放（需自備授權音樂）
+        const MUSIC = {
+            jp: { bpm: 92,  wave: 'triangle', bass: [50, 0, 57, 0],
+                  melody: [[69,1],[70,1],[69,.5],[65,.5],[64,1],[62,2],[64,1],[65,1],[69,2],[74,1],[70,1],[69,2]] },
+            mx: { bpm: 150, wave: 'square',   bass: [48, 55, 55, 48, 55, 55],
+                  melody: [[67,.5],[67,.5],[69,.5],[71,.5],[72,1],[71,.5],[69,.5],[67,1],[64,.5],[65,.5],[67,1],[72,.5],[74,.5],[76,2]] },
+            in: { bpm: 110, wave: 'sine',     bass: [48, 48, 48, 48],
+                  melody: [[60,1],[61,.5],[64,.5],[65,1],[67,1],[68,.5],[71,.5],[72,2],[71,.5],[68,.5],[67,1],[65,.5],[64,.5],[61,1],[60,2]] },
+            sc: { bpm: 108, wave: 'sawtooth', bass: [45, 45, 45, 45],
+                  melody: [[69,1],[71,.5],[73,.5],[74,1],[76,1],[74,.5],[73,.5],[71,1],[69,1],[76,1],[78,.5],[76,.5],[74,1],[73,1],[71,.5],[69,.5],[69,2]] },
+            eg: { bpm: 100, wave: 'square',   bass: [50, 0, 50, 57],
+                  melody: [[62,1],[63,.5],[66,.5],[67,1],[69,1],[70,.5],[69,.5],[67,1],[66,1],[63,.5],[62,.5],[62,2]] },
+            br: { bpm: 132, wave: 'triangle', bass: [48, 55, 53, 55],
+                  melody: [[72,.5],[71,.25],[69,.25],[67,.5],[69,.5],[72,.5],[74,.5],[72,.5],[69,.5],[67,.75],[65,.25],[64,.5],[65,.5],[67,1]] },
+            kr: { bpm: 84,  wave: 'sine',     bass: [43, 0, 48, 0],
+                  melody: [[67,1],[69,1],[72,1.5],[74,.5],[72,1],[69,1],[67,2],[72,1],[74,1],[76,1.5],[74,.5],[72,1],[69,1],[67,2]] },
+            mn: { bpm: 72,  wave: 'sawtooth', bass: [38, 38, 38, 38],
+                  melody: [[62,2],[65,1],[67,1],[69,2],[67,1],[65,1],[62,2]] },
+            ke: { bpm: 140, wave: 'square',   bass: [48, 52, 55, 52],
+                  melody: [[64,.5],[67,.5],[69,.5],[67,.5],[64,.5],[62,.5],[60,1],[64,.5],[67,.5],[71,.5],[69,.5],[67,.5],[64,.5],[62,1]] },
+            cn: { bpm: 96,  wave: 'triangle', bass: [48, 0, 55, 0],
+                  melody: [[67,1],[69,1],[72,1],[69,1],[67,1],[64,1],[62,2],[60,1],[62,1],[64,1],[67,1],[69,1],[67,1],[64,2]] },
+            ng: { bpm: 120, wave: 'square',   bass: [41, 41, 48, 46],
+                  melody: [[65,.5],[65,.5],[68,.5],[70,.5],[72,1],[70,.5],[68,.5],[65,1],[63,.5],[65,.5],[68,1],[65,2]] },
+            pe: { bpm: 104, wave: 'sine',     bass: [40, 0, 47, 0],
+                  melody: [[76,1],[74,.5],[71,.5],[69,1],[67,1],[64,2],[67,1],[69,1],[71,.5],[74,.5],[76,1],[74,1],[71,2]] },
+            tr: { bpm: 112, wave: 'sawtooth', bass: [40, 40, 47, 40],
+                  melody: [[64,.5],[65,.5],[68,.5],[69,.5],[71,1],[69,.5],[68,.5],[65,.5],[64,1],[62,.5],[64,1],[65,.5],[64,.5],[62,1]] },
+            th: { bpm: 118, wave: 'sine',     bass: [43, 0, 50, 0],
+                  melody: [[67,.5],[69,.5],[72,.5],[74,.5],[72,.5],[69,.5],[67,1],[65,.5],[67,.5],[69,1],[67,.5],[65,.5],[62,1]] },
+            no: { bpm: 72,  wave: 'triangle', bass: [45, 0, 0, 52],
+                  melody: [[69,1.5],[71,.5],[72,1],[76,1],[74,1],[72,1],[71,2],[69,1],[67,1],[64,1],[65,1],[69,3]] },
+            ru: { bpm: 126, wave: 'square',   bass: [45, 52, 45, 52],
+                  melody: [[69,.5],[69,.5],[72,.5],[71,.5],[69,1],[67,.5],[65,.5],[64,1],[65,.5],[67,.5],[69,1],[69,.5],[69,.5],[72,.5],[71,.5],[69,1],[64,1],[69,1]] },
+            nz: { bpm: 100, wave: 'sawtooth', bass: [36, 36, 0, 36],
+                  melody: [[60,.5],[60,.5],[62,.5],[64,.5],[62,.5],[60,1],[55,.5],[57,.5],[60,1],[60,.5],[62,.5],[64,1]] },
+            fr: { bpm: 160, wave: 'triangle', bass: [48, 55, 55, 43, 55, 55],
+                  melody: [[67,1],[72,1],[76,1],[74,1],[72,1],[71,1],[69,1],[72,1],[74,1],[72,1],[71,1],[67,1],[69,1],[71,1],[72,1],[72,2],[0,1]] },
+            ua: { bpm: 112, wave: 'sine',     bass: [45, 0, 52, 0],
+                  melody: [[64,1],[67,.5],[69,.5],[71,1],[69,.5],[67,.5],[64,1],[62,1],[60,1],[62,.5],[64,.5],[67,1],[64,1],[62,2]] },
+            es: { bpm: 120, wave: 'sawtooth', bass: [40, 41, 43, 40],
+                  melody: [[76,.5],[77,.5],[76,.5],[74,.5],[72,1],[71,1],[69,.5],[71,.5],[72,.5],[74,.5],[72,.5],[71,.5],[69,1],[65,.5],[64,1.5]] }
+        };
+        const MUSIC_VOL = 0.07;
+        let musicTimer = null, musicNodes = [], musicAudio = null, musicId = null;
+        function midiHz(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+        function musicNote(midi, at, dur, wave, vol) {
+            const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+            o.type = wave; o.frequency.value = midiHz(midi);
+            g.gain.setValueAtTime(0.0001, at);
+            g.gain.linearRampToValueAtTime(vol, at + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+            o.connect(g).connect(audioCtx.destination);
+            o.start(at); o.stop(at + dur + 0.05);
+            musicNodes.push(o);
+        }
+        function startMusic(id) {
+            stopMusic();
+            const m = MUSIC[id]; if (!m || muted) return;
+            musicId = id;
+            if (m.track) {                       // 真實音檔
+                musicAudio = new Audio(m.track);
+                musicAudio.loop = true; musicAudio.volume = 0.5;
+                musicAudio.play().catch(() => {});
+                return;
+            }
+            if (!audioCtx) return;
+            const beat = 60 / m.bpm;
+            const loopLen = m.melody.reduce((a, n) => a + n[1], 0) * beat;
+            let t = audioCtx.currentTime + 0.05;
+            const schedule = () => {
+                let tt = t;
+                for (const [n, d] of m.melody) { if (n) musicNote(n, tt, d * beat * 0.9, m.wave, MUSIC_VOL); tt += d * beat; }
+                let tb = t, bi = 0;
+                while (tb < t + loopLen - 0.001) {
+                    const bn = m.bass[bi % m.bass.length];
+                    if (bn) musicNote(bn, tb, beat * 0.8, 'triangle', MUSIC_VOL * 0.9);
+                    tb += beat; bi++;
+                }
+                musicNodes = musicNodes.filter(o => true).slice(-200);   // 只留最近的節點參考
+                t += loopLen;
+                musicTimer = setTimeout(schedule, Math.max(50, (t - audioCtx.currentTime - 0.3) * 1000));
+            };
+            schedule();
+        }
+        function stopMusic() {
+            clearTimeout(musicTimer); musicTimer = null; musicId = null;
+            musicNodes.forEach(o => { try { o.stop(); } catch (e) {} });
+            musicNodes = [];
+            if (musicAudio) { musicAudio.pause(); musicAudio = null; }
+        }
 
         // ===== 飄字與提示 =====
         function popText(x, y, text, color) {
@@ -1473,6 +1568,7 @@
                 clockoutBtn.style.display = 'none';
                 if (lv.mech === 'wind') setWind(1.5);
                 setCountryFrame(lv);
+                startMusic(lv.id);           // 該國背景音樂
             } else if (endless) {
                 elapsed = 0;
                 levelDisplay.innerHTML = `加班中<br><span class="lv-name">第 1 波</span>`;
@@ -1551,6 +1647,7 @@
             hideSplash();
             setWind(0); hideConfetti(); hideDark(); wakeUp();
             setCountryFrame(null);
+            stopMusic();
             clearItems();
             clockoutBtn.style.display = 'none';
         }
