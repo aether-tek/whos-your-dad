@@ -1783,6 +1783,9 @@
         // 中斷目前關卡，直接回主畫面（不記分）
         function returnToMenu() {
             stopLevel();
+            stopMusic();                                   // 保險：確保背景音樂停掉
+            try { if (voiceAudio) voiceAudio.pause(); } catch (e) {}   // 停掉當地話語音
+            try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {}
             levelScreen.style.display = 'none';
             gameOverScreen.style.display = 'none';
             document.getElementById('pp-detail').style.display = 'none';
