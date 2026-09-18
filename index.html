@@ -1090,7 +1090,7 @@
         function sayLine(lv, key) {
             if (!lv || !lv.lines) return '';
             const [native, zh] = lv.lines[key];
-            say(native, lv.lang);
+            playVoice(lv.id, key, native, lv.lang);
             return `<span class="lv-say">🗣️ ${native}</span> <span class="lv-tip">（${zh}）</span>`;
         }
 
@@ -1271,7 +1271,18 @@
             else if (isPlaying) { ensureAudio(); startMusic(currentMusicId()); }
         });
         function currentMusicId() { return trip ? curLv().id : endless ? 'endless' : 'story'; }
-        // 該國語言的一句話（瀏覽器有語音合成就唸出來）
+        // 該國語言的一句話：優先播 repo 內的男聲 mp3，播不出來才退回系統語音合成
+        let voiceAudio = null;
+        function playVoice(id, key, fallbackText, lang) {
+            if (sfxMuted) return;
+            try { if (voiceAudio) voiceAudio.pause(); } catch (e) {}
+            try {
+                voiceAudio = new Audio(`assets/voice/${id}-${key}.mp3`);
+                voiceAudio.volume = 1;
+                const p = voiceAudio.play();
+                if (p && p.catch) p.catch(() => say(fallbackText, lang));
+            } catch (e) { say(fallbackText, lang); }
+        }
         function say(text, lang) {
             if (sfxMuted || !text || !window.speechSynthesis) return;
             try {
@@ -1514,7 +1525,7 @@
                 (c.tip2 ? `<div class="ppd-row"><b>✨ 隱藏玩法：</b>${c.tip2}</div>` : '') +
                 `<div class="ppd-row"><b>🎁 特產：</b>${c.souvenir[0]} ${c.souvenir[1]}${got ? '（已收集）' : '（尚未收集）'}</div>` +
                 (visited ? '' : `<div class="ppd-locked">🔒 還沒去過這個國家</div>`);
-            say(c.lines.intro[0], c.lang);
+            playVoice(c.id, 'intro', c.lines.intro[0], c.lang);
             document.getElementById('pp-detail').style.display = 'flex';
         }
         passportBtn.addEventListener('click', () => {
@@ -1992,7 +2003,7 @@
                 sfx.clear();
                 if (pillsThisLevel === 0) unlock('clean');
                 if (trip) stampPassport(lv.id);           // 每過一國就蓋章
-                if (trip && levelIdx === lastLevelIdx()) { unlock('trip1'); say(lv.lines.clear[0], lv.lang); finish('tripclear'); return; }
+                if (trip && levelIdx === lastLevelIdx()) { unlock('trip1'); playVoice(lv.id, 'clear', lv.lines.clear[0], lv.lang); finish('tripclear'); return; }
                 if (!trip && levelIdx === WIN_AFTER_LEVEL) {
                     // 三關全過：解鎖加班模式與相關成就，再播影片
                     save('wyd_endless', true);
