@@ -1466,12 +1466,12 @@
                 speed += 1 + comboPillSpd;
 
             } else if (rand < p_tool) {
-                // 剪刀 or 刮鬍刀（各 50%）
-                const isSci = Math.random() < 0.5;
+                // 剪刀 70%：髮量 -1；刮鬍刀 30%：髮量 -2，掉得更快
+                const isRazor = Math.random() < 0.3;
                 item.classList.add('tool');
-                item.innerText = isSci ? '✂️' : '🪒';
-                type = 'tool';
-                speed += 6;     // 非常快，比金鈔還快1格，要刻意搶
+                item.innerText = isRazor ? '🪒' : '✂️';
+                type = isRazor ? 'razor' : 'scissors';
+                speed += isRazor ? 8 : 6;     // 非常快，比金鈔還快，要刻意搶
 
             } else if (rand < p_gold) {
                 // 金色鈔票 $500
@@ -1550,10 +1550,14 @@
                         setHair(hairLevel + 1);
                         popText(px, py, '-$50', '#e74c3c');
 
-                    } else if (type === 'tool') {
-                        // 剪刀 / 刮鬍刀：髮量 -1（最低 0）
-                        if (hairLevel > 0) { setHair(hairLevel - 1); popText(px, py, '髮量 -1', '#5dade2'); }
-                        else popText(px, py, '已經很茂密了', '#95a5a6');
+                    } else if (type === 'scissors' || type === 'razor') {
+                        // 剪刀：髮量 -1；刮鬍刀：髮量 -2（最低 0）
+                        const cut = type === 'razor' ? 2 : 1;
+                        if (hairLevel > 0) {
+                            const actual = Math.min(cut, hairLevel);
+                            setHair(hairLevel - actual);
+                            popText(px, py, `髮量 -${actual}`, type === 'razor' ? '#9b59b6' : '#5dade2');
+                        } else popText(px, py, '已經很茂密了', '#95a5a6');
                         sfx.tool();
                         // 道具不加分、不算連擊、不中斷連擊
 
@@ -1590,7 +1594,7 @@
                 }
 
                 if (topPos > 600) {
-                    if (type !== 'pill' && type !== 'tool') {
+                    if (type !== 'pill' && type !== 'scissors' && type !== 'razor') {
                         if (combo >= 3) popText(x, 560, `連擊 ×${combo} 斷了`, '#e74c3c');
                         resetCombo();
                     }
