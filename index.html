@@ -988,6 +988,7 @@
 
         // ===== 世界出差：六國關卡，每國一個專屬機制 =====
         // mech: disguise（日本）dual（墨西哥）sine（印度）wind（蘇格蘭）goldrush（埃及）confetti（巴西）
+        const AV = '?v=7';   // 服裝圖版本，換圖後改這裡就能讓瀏覽器重抓、不吃舊快取
         const COUNTRIES = [
             { id: 'jp', flag: '🇯🇵', country: '日本',   name: '東京 · 便當陷阱',   img: 'assets/country-japan.jpg',    currency: '¥',
               time: 30, target: 900,  pill: 0.28, spawn: 240, bossMove: 260, speedBase: 3.0, drift: 0,   speedMul: 0.95,
@@ -1278,7 +1279,7 @@
                 document.querySelectorAll('.corner-flag').forEach(el => el.innerText = lv.flag);
                 container.classList.add('trip-on');
                 container.style.borderColor = lv.accent || '#fff';
-                container.style.backgroundImage = `url('${lv.img}')`;   // 背景換成該國服裝的爹地
+                container.style.backgroundImage = `url('${lv.img}${AV}')`;   // 背景換成該國服裝的爹地
             } else {
                 container.classList.remove('trip-on');
                 container.style.borderColor = '';
@@ -1636,7 +1637,7 @@
                 `🛂 爹地的護照　${passportCount()}/${COUNTRIES.length} 國 · 特產 ${souvenirCount()}/${COUNTRIES.length}`;
             document.getElementById('pp-grid').innerHTML = COUNTRIES.map(c => `
                 <div class="pp-item ${passport[c.id] ? '' : 'locked'}" data-id="${c.id}">
-                    <img src="${c.img}" alt="">
+                    <img src="${c.img}${AV}" alt="">
                     <div class="pp-stamp">已到訪</div>
                     ${souvenirs[c.id] ? `<div class="pp-souvenir" title="${c.souvenir[1]}">${c.souvenir[0]}</div>` : ''}
                     <div class="pp-name">${c.flag} ${c.country}</div>
@@ -1995,7 +1996,7 @@
         function showLevelIntro() {
             const lv = curLevels()[levelIdx];
             levelTitle.innerText = trip ? `${lv.flag} ${lv.name}` : lv.name;
-            if (trip) { levelImg.src = lv.img; levelImg.style.display = 'block'; }
+            if (trip) { levelImg.src = lv.img + AV; levelImg.style.display = 'block'; }
             else levelImg.style.display = 'none';
             levelBody.innerHTML =
                 (trip ? `第 ${tripStop} 站　剩 ${livesHtml()}　` : '') +
@@ -2181,7 +2182,7 @@
                         `實收 <span style="color:#2ecc71">${fmtMoney(raw)}</span>　小費 <span style="color:#f1c40f">${fmtMoney(score)}</span>　累積 <span style="color:#2ecc71">${fmtMoney(bank)}</span><br>` +
                         `護照 ${passportCount()}/${COUNTRIES.length}　特產 ${souvenirCount()}/${COUNTRIES.length}　剩 ${livesHtml()}<br>` +
                         `下一站：${nx.flag} ${nx.name}`;
-                    levelImg.src = nx.img; levelImg.style.display = 'block';
+                    levelImg.src = nx.img + AV; levelImg.style.display = 'block';
                     levelBtn.innerText = '前往下一站';
                     levelBtn.dataset.action = 'intro';
                     levelScreen.style.display = 'flex';
@@ -2212,7 +2213,7 @@
                         `這站只收到 <span style="color:#e74c3c">${fmtMoney(raw)}</span>／目標 ${lv.target}<br>` +
                         `用掉一命 → 剩 ${livesHtml()}<br>` +
                         `下一站：${nx.flag} ${nx.name}`;
-                    levelImg.src = nx.img; levelImg.style.display = 'block';
+                    levelImg.src = nx.img + AV; levelImg.style.display = 'block';
                     levelBtn.innerText = '前往下一站';
                     levelBtn.dataset.action = 'intro';
                     levelScreen.style.display = 'flex';
