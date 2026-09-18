@@ -1103,7 +1103,17 @@
         let windChangedAt = 0;         // 蘇格蘭：上次換風時間
         let confettiOn = false;        // 巴西：彩帶是否正在遮
 
-        const TRIP_STOPS = 3;          // 一趟出差跑幾國
+        const TRIP_STOPS = 3;          // 已不再限制站數，保留常數避免其他引用出錯
+        let tripStop = 0;              // 本趟出差累計到第幾站（跨越洗牌）
+        // 前往下一站；一輪 20 國跑完就重新洗牌繼續，直到命用完
+        function advanceTrip() {
+            levelIdx++;
+            if (levelIdx >= tripLevels.length) {
+                tripLevels = COUNTRIES.slice().sort(() => Math.random() - 0.5);
+                levelIdx = 0;
+            }
+            tripStop++;
+        }
         let trip = false;              // 目前是否在出差模式
         let tripLevels = [];           // 這趟出差抽到的國家（依序）
         function curLevels() { return trip ? tripLevels : LEVELS; }
@@ -1853,7 +1863,7 @@
             if (trip) { levelImg.src = lv.img; levelImg.style.display = 'block'; }
             else levelImg.style.display = 'none';
             levelBody.innerHTML =
-                (trip ? `第 ${levelIdx + 1} 站 / ${tripLevels.length}　` : '') +
+                (trip ? `第 ${tripStop} 站　剩 ${livesHtml()}　` : '') +
                 `目標：實收面額 <span style="color:#f1c40f">$${lv.target}</span>　限時 ${lv.time} 秒<br>` +
                 `<span class="lv-tip">門檻只算接到的鈔票面額，連擊與高空加成算進小費不算門檻</span><br>` +
                 `<span style="color:#f39c12;font-weight:bold">⭐ 本關特色：</span><span class="lv-tip" style="color:#ecf0f1">${lv.tip}</span><br>` +
@@ -1890,7 +1900,7 @@
             levelImg.style.display = 'none';
             if (trip) {
                 levelDisplay.innerHTML =
-                    `${lv.flag} ${lv.country}<br><span class="lv-name">第 ${levelIdx + 1} 站</span>`;
+                    `${lv.flag} ${lv.country}<br><span class="lv-name">第 ${tripStop} 站</span>`;
                 timeDisplay.innerText = `${timeLeft}s`;
                 timeDisplay.style.color = '';
                 clockoutBtn.style.display = 'none';
@@ -2002,8 +2012,6 @@
                 bank += score;
                 sfx.clear();
                 if (pillsThisLevel === 0) unlock('clean');
-                if (trip) stampPassport(lv.id);           // 每過一國就蓋章
-                if (trip && levelIdx === lastLevelIdx()) { unlock('trip1'); playVoice(lv.id, 'clear', lv.lines.clear[0], lv.lang); finish('tripclear'); return; }
                 if (!trip && levelIdx === WIN_AFTER_LEVEL) {
                     // 三關全過：解鎖加班模式與相關成就，再播影片
                     save('wyd_endless', true);
@@ -2015,15 +2023,32 @@
                     playWinVideo();
                     return;
                 }
+                if (trip) {
+                    // 出差：蓋章，直接前往下一站（命還在就一直玩下去）
+                    stampPassport(lv.id);
+                    unlock('trip1');
+                    if (bank >= 10000) unlock('rich');
+                    advanceTrip();
+                    const nx = curLevels()[levelIdx];
+                    levelTitle.innerText = '✅ 過關！蓋章前往下一站';
+                    levelBody.innerHTML =
+                        sayLine(lv, 'clear') + '<br>' +
+                        `實收 <span style="color:#2ecc71">${fmtMoney(raw)}</span>　小費 <span style="color:#f1c40f">${fmtMoney(score)}</span>　累積 <span style="color:#2ecc71">${fmtMoney(bank)}</span><br>` +
+                        `護照 ${passportCount()}/${COUNTRIES.length}　特產 ${souvenirCount()}/${COUNTRIES.length}　剩 ${livesHtml()}<br>` +
+                        `下一站：${nx.flag} ${nx.name}`;
+                    levelImg.src = nx.img; levelImg.style.display = 'block';
+                    levelBtn.innerText = '前往下一站';
+                    levelBtn.dataset.action = 'intro';
+                    levelScreen.style.display = 'flex';
+                    return;
+                }
                 levelIdx++;
                 levelTitle.innerText = '✅ 過關！';
                 levelBody.innerHTML =
-                    (trip ? sayLine(lv, 'clear') + '<br>' : '') +
                     `實收 <span style="color:#2ecc71">${fmtMoney(raw)}</span>　小費 <span style="color:#f1c40f">${fmtMoney(score)}</span>　` +
                     `累積 <span style="color:#2ecc71">${fmtMoney(bank)}</span><br>` +
                     `髮量 <span style="color:#f5b041">${hairLevel + 1}/9</span>　` +
-                    `下一${trip ? '站' : '關'}：${trip ? curLevels()[levelIdx].flag + ' ' : ''}${curLevels()[levelIdx].name}`;
-                if (trip) { levelImg.src = curLevels()[levelIdx].img; levelImg.style.display = 'block'; }
+                    `下一關：${curLevels()[levelIdx].name}`;
                 levelBtn.innerText = '繼續';
                 levelBtn.dataset.action = 'intro';    // 先看下一關的特色說明，再開工
                 levelScreen.style.display = 'flex';
@@ -2032,9 +2057,24 @@
                 lives--; lostLifeThisRun = true; renderLives();
                 if (lives <= 0) { finish('broke'); return; }
                 sfx.fail();
+                if (trip) {
+                    // 出差沒達標：用掉一命，但仍直接前往下一站，不卡在原地
+                    advanceTrip();
+                    const nx = curLevels()[levelIdx];
+                    levelTitle.innerText = '❌ 沒達標，用掉一命';
+                    levelBody.innerHTML =
+                        sayLine(lv, 'fail') + '<br>' +
+                        `這站只收到 <span style="color:#e74c3c">${fmtMoney(raw)}</span>／目標 ${lv.target}<br>` +
+                        `用掉一命 → 剩 ${livesHtml()}<br>` +
+                        `下一站：${nx.flag} ${nx.name}`;
+                    levelImg.src = nx.img; levelImg.style.display = 'block';
+                    levelBtn.innerText = '前往下一站';
+                    levelBtn.dataset.action = 'intro';
+                    levelScreen.style.display = 'flex';
+                    return;
+                }
                 levelTitle.innerText = '❌ 爹地收手了';
                 levelBody.innerHTML =
-                    (trip ? sayLine(lv, 'fail') + '<br>' : '') +
                     `實收面額只有 <span style="color:#e74c3c">${fmtMoney(raw)}</span>，` +
                     `差 <span style="color:#e74c3c">${fmtMoney(lv.target - raw)}</span><br>` +
                     `用掉一命 → 剩 ${livesHtml()}<br>` +
@@ -2053,7 +2093,8 @@
             lives--; lostLifeThisRun = true;
             setHair(RESCUE_HAIR);
             sfx.fail();
-            if (endless) {
+            if (endless || trip) {
+                // 加班／出差：原地急救，用掉一命、髮量洗回，繼續玩不中斷
                 popText(basketX - 30, basketY - 40, `急救！-1命　髮量回 ${RESCUE_HAIR + 1}/9`, '#e74c3c');
                 toast(`☠️ 適尿通過量，用掉一命，剩 ${lives} 命`);
                 return true;
@@ -2107,17 +2148,19 @@
                 finalScore.style.color = '#f1c40f';
                 if (reason === 'overdose') sfx.fail(); else sfx.clear();
             } else if (reason === 'overdose') {
-                h2.innerText = '☠️ 適尿通過量！';
+                h2.innerText = trip ? '🛂 出差到此為止' : '☠️ 適尿通過量！';
+                const where = trip ? `跑了 ${tripStop} 站，護照 ${passportCount()}/${COUNTRIES.length}　特產 ${souvenirCount()}/${COUNTRIES.length}`
+                                   : `倒在第 ${levelIdx + 1} 關`;
                 finalScore.innerHTML =
-                    `三條命都用完，最後一盒直接送走<br>` +
-                    `倒在第 ${levelIdx + 1} ${trip ? '站' : '關'}，結算 ${fmtMoney(total)}`;
+                    `命都用完，最後一盒直接送走<br>${where}<br>結算 ${fmtMoney(total)}`;
                 finalScore.style.color = '#e74c3c';
                 sfx.fail();
             } else if (reason === 'broke') {
-                h2.innerText = '💸 三命用盡';
+                h2.innerText = trip ? '🛂 出差到此為止' : '💸 三命用盡';
+                const where = trip ? `跑了 ${tripStop} 站，護照 ${passportCount()}/${COUNTRIES.length}　特產 ${souvenirCount()}/${COUNTRIES.length}`
+                                   : `第 ${levelIdx + 1} 關業績一直沒達標`;
                 finalScore.innerHTML =
-                    `第 ${levelIdx + 1} ${trip ? '站' : '關'}業績一直沒達標<br>` +
-                    `爹地不再給機會，結算 ${fmtMoney(total)}`;
+                    `${where}<br>命用完了，結算 ${fmtMoney(total)}`;
                 finalScore.style.color = '#e74c3c';
                 sfx.fail();
             } else {
@@ -2727,7 +2770,7 @@
         function resetRun() {
             levelIdx = 0; bank = 0; score = 0; hairLevel = 0; elapsed = 0;
             runAch = []; goldThisRun = 0; dodgesThisRun = 0; pillsThisLevel = 0;
-            lives = START_LIVES; lostLifeThisRun = false;
+            lives = START_LIVES; lostLifeThisRun = false; tripStop = 0;
         }
         function newGame() {
             ensureAudio();
@@ -2740,7 +2783,8 @@
             ensureAudio();
             endless = false; trip = true;
             resetRun();
-            tripLevels = COUNTRIES.slice().sort(() => Math.random() - 0.5).slice(0, TRIP_STOPS);
+            tripLevels = COUNTRIES.slice().sort(() => Math.random() - 0.5);   // 全 20 國隨機排序
+            tripStop = 1;
             showLevelIntro();
         }
         // 從開始畫面進加班：全新一場，髮量 0
