@@ -782,8 +782,9 @@
             z-index: 30; padding: 18px; box-sizing: border-box; text-align: center;
         }
         #pp-detail .ppd-card {
-            background: #1c2833; border: 3px solid #f1c40f; border-radius: 14px;
+            background: rgba(28,40,51,0.5); border: 3px solid #f1c40f; border-radius: 14px;
             padding: 14px 16px; max-width: 320px; box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
         }
         #pp-detail .ppd-flag { font-size: 40px; }
         #pp-detail .ppd-name { font-size: 18px; font-weight: bold; color: #f1c40f; margin: 2px 0 8px; }
@@ -1660,7 +1661,7 @@
             const pd = document.getElementById('pp-detail');
             // 背景放該國爹地照，蓋一層暗色讓卡片字看得清楚
             pd.style.backgroundImage =
-                `linear-gradient(rgba(0,0,0,0.78), rgba(0,0,0,0.6)), url('${c.img}${AV}')`;
+                `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.35)), url('${c.img}${AV}')`;
             pd.style.backgroundSize = 'cover';
             pd.style.backgroundPosition = 'center 20%';
             pd.style.display = 'flex';
