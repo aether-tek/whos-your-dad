@@ -679,13 +679,14 @@
             const t = elapsed;
             return {
                 name: '加班模式 · 無盡', time: 0, target: Infinity, tip: '',
-                pill:      Math.min(0.22 + t * 0.004, 0.5),
-                spawn:     Math.max(110, 260 - t * 2),
-                bossMove:  Math.max(110, 300 - t * 2.5),
-                speedBase: 3.5 + t * 0.03,
-                speedMul:  1.3,
-                drift:     Math.min(3, t * 0.06),
-                junk:      t >= 20,
+                // 大約 150 秒才到頂，前 30 秒接近第一關手感
+                pill:      Math.min(0.18 + t * 0.0018, 0.45),
+                spawn:     Math.max(130, 300 - t * 1.1),
+                bossMove:  Math.max(130, 320 - t * 1.3),
+                speedBase: 3.0 + t * 0.012,
+                speedMul:  1.2,
+                drift:     Math.min(2.6, t * 0.025),
+                junk:      t >= 45,
                 gold:      0.05,
                 tool:      0.05
             };
@@ -1437,8 +1438,8 @@
         function spawnItem() {
             if (!isPlaying) return;
             // 巨型藥盒：故事模式在分數達到當關目標 50% 後 8%；加班模式 15 秒後 6%
-            const megaReady = endless ? elapsed >= 15 : score >= LEVELS[levelIdx].target * 0.5;
-            if (!megaCooldown && megaReady && Math.random() < (endless ? 0.06 : 0.08)) {
+            const megaReady = endless ? elapsed >= 30 : score >= LEVELS[levelIdx].target * 0.5;
+            if (!megaCooldown && megaReady && Math.random() < (endless ? 0.04 : 0.08)) {
                 spawnMegaPill(); return;
             }
 
