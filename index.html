@@ -53,7 +53,7 @@
 
         #basket {
             position: absolute;
-            bottom: 20px;
+            top: 540px;      /* 由 JS 控制，可上下左右移動 */
             left: 175px;
             width: 70px;
             height: 40px;
@@ -403,6 +403,7 @@
             <p class="instructions">
                 三個關卡，每關都要達到業績目標才能晉級<br>
                 💵 $10 | 💵 $50 | 💵 $100<br>
+                <span style="color:#5dade2">🎮 滑鼠 / 方向鍵 / WASD / 手指　上下左右都能動</span><br>
                 <span style="color: #ffeb3b; font-weight: bold;">⚠️ 接到「適尿通」扣 50，爹地頭髮 +1</span><br>
                 <span style="color: #e67e22; font-weight: bold;">🔺 髮量整場累積，不會因為過關或重玩而還你</span><br>
                 <span style="color: #e74c3c; font-weight: bold;">☠️ 髮量 9/9 還再吃一盒 → 直接結束</span>
@@ -514,6 +515,7 @@
 
         const containerWidth = 400;
         const basketWidth = 70;
+        const basketHeight = 40;
         const bossWidth = 109;
 
         let combo = 0;
@@ -572,24 +574,87 @@
         window.addEventListener('resize', fitToScreen);
         fitToScreen();
 
-        // ===== 錢包移動 =====
-        container.addEventListener('mousemove', (e) => {
-            if (!isPlaying) return;
-            const rect = container.getBoundingClientRect();
-            moveBasket((e.clientX - rect.left) / scale - basketWidth / 2);
-        });
-        container.addEventListener('touchmove', (e) => {
-            if (!isPlaying) return;
-            const rect = container.getBoundingClientRect();
-            moveBasket((e.touches[0].clientX - rect.left) / scale - basketWidth / 2);
-            e.preventDefault();
-        }, { passive: false });
+        // ===== 錢包移動（上下左右）=====
+        // 垂直活動範圍：下半部再往上一點，避免蹲在爹地正下方秒接一切
+        const BASKET_MIN_Y = 230;
+        const BASKET_MAX_Y = 540;
+        const BASKET_START_Y = 540;
+        const TOUCH_OFFSET_Y = 70;   // 手機：錢包放在手指上方，免得被手指遮住
+        const KEY_SPEED = 7;         // 鍵盤每幀移動的像素
 
-        function moveBasket(x) {
+        let basketX = 175;
+        let basketY = BASKET_START_Y;
+
+        function moveBasket(x, y) {
             if (x < 0) x = 0;
             if (x > containerWidth - basketWidth) x = containerWidth - basketWidth;
+            if (y < BASKET_MIN_Y) y = BASKET_MIN_Y;
+            if (y > BASKET_MAX_Y) y = BASKET_MAX_Y;
+            basketX = x; basketY = y;
             basket.style.left = x + 'px';
+            basket.style.top  = y + 'px';
         }
+
+        function resetBasket() {
+            moveBasket((containerWidth - basketWidth) / 2, BASKET_START_Y);
+        }
+
+        // 把畫面座標換成容器內的 400×600 座標（考慮縮放）
+        function toLocal(clientX, clientY) {
+            const rect = container.getBoundingClientRect();
+            return { x: (clientX - rect.left) / scale, y: (clientY - rect.top) / scale };
+        }
+
+        // 滑鼠：錢包跟著游標
+        container.addEventListener('mousemove', (e) => {
+            if (!isPlaying) return;
+            const p = toLocal(e.clientX, e.clientY);
+            moveBasket(p.x - basketWidth / 2, p.y - basketHeight / 2);
+        });
+
+        // 觸控：錢包放在手指上方 TOUCH_OFFSET_Y，touchstart 也處理，手指一放下就定位
+        function onTouch(e) {
+            if (!isPlaying) return;
+            const t = e.touches[0]; if (!t) return;
+            const p = toLocal(t.clientX, t.clientY);
+            moveBasket(p.x - basketWidth / 2, p.y - basketHeight - TOUCH_OFFSET_Y);
+            e.preventDefault();
+        }
+        container.addEventListener('touchstart', onTouch, { passive: false });
+        container.addEventListener('touchmove',  onTouch, { passive: false });
+
+        // 鍵盤：方向鍵 / WASD，按住連續移動
+        const keys = { left: false, right: false, up: false, down: false };
+        const KEYMAP = {
+            ArrowLeft: 'left',  a: 'left',  A: 'left',
+            ArrowRight: 'right', d: 'right', D: 'right',
+            ArrowUp: 'up',      w: 'up',    W: 'up',
+            ArrowDown: 'down',  s: 'down',  S: 'down'
+        };
+        window.addEventListener('keydown', (e) => {
+            const k = KEYMAP[e.key];
+            if (!k) return;
+            keys[k] = true;
+            e.preventDefault();   // 擋掉方向鍵捲動頁面
+        });
+        window.addEventListener('keyup', (e) => {
+            const k = KEYMAP[e.key];
+            if (k) keys[k] = false;
+        });
+        window.addEventListener('blur', () => {
+            keys.left = keys.right = keys.up = keys.down = false;
+        });
+
+        // 每幀讀一次按鍵狀態移動錢包；沒按鍵時什麼都不做，滑鼠/觸控仍是直接定位
+        function keyLoop() {
+            if (isPlaying) {
+                const dx = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
+                const dy = (keys.down  ? 1 : 0) - (keys.up   ? 1 : 0);
+                if (dx || dy) moveBasket(basketX + dx * KEY_SPEED, basketY + dy * KEY_SPEED);
+            }
+            requestAnimationFrame(keyLoop);
+        }
+        requestAnimationFrame(keyLoop);
 
         // ===== 關卡流程 =====
         function showLevelIntro() {
@@ -615,6 +680,7 @@
             isPlaying = true;
             resetCombo();
             resetMega();
+            resetBasket();
             hideSplash();
             clearItems();
             setHair(hairLevel);        // 髮量沿用，不重置
