@@ -185,6 +185,11 @@
         #game-over-screen, #level-screen {
             display: none;
         }
+        /* 主頁背景：爹地本人（非任何關卡預覽照），壓一層暗色讓選單看得清楚 */
+        #start-screen {
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.72)),
+                        url('assets/home-bg.jpg') center 15% / cover;
+        }
 
         #win-video-wrap {
             position: absolute;
@@ -574,6 +579,18 @@
             overflow-y: auto;
         }
         #passport-screen h2 { margin: 0 0 6px; font-size: 18px; }
+        /* 運動會預覽（沿用 pp-grid / pp-item 樣式）*/
+        #sports-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.92); display: none; flex-direction: column;
+            align-items: center; z-index: 22; padding: 10px 12px;
+            box-sizing: border-box; overflow-y: auto;
+        }
+        #sports-screen h2 { margin: 0 0 8px; font-size: 18px; color: #e67e22; }
+        #sports-screen .pp-grid { grid-template-columns: repeat(3, 1fr); }
+        #sports-screen .pp-item { cursor: pointer; }
+        .sp-btn-row { display: flex; gap: 10px; margin-top: 14px; }
+        .small-btn.go { background: #e67e22; border-color: #e67e22; color: #fff; font-weight: bold; }
         .pp-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; }
         .pp-item { text-align: center; font-size: 12px; color: #bdc3c7; position: relative; }
         .pp-item img { width: 100%; height: 72px; object-fit: cover; object-position: top; border-radius: 8px; border: 2px solid #444; }
@@ -741,6 +758,7 @@
         .mode-card.trip    { border-color: #16a085; }
         .mode-card.endless { border-color: #8e44ad; }
         .mode-card.casino  { border-color: #f1c40f; }
+        .mode-card.sports  { border-color: #e67e22; }
         .mc-icon { font-size: 30px; width: 36px; text-align: center; }
         .mc-text { flex: 1; }
         .mc-name { font-size: 16px; font-weight: bold; }
@@ -748,6 +766,7 @@
         .mode-card.trip .mc-name    { color: #1abc9c; }
         .mode-card.endless .mc-name { color: #bb8fce; }
         .mode-card.casino .mc-name  { color: #f1c40f; }
+        .mode-card.sports .mc-name  { color: #e67e22; }
         .mc-desc { font-size: 12px; color: #bdc3c7; line-height: 1.35; }
         .mc-best { font-size: 11px; color: #f1c40f; margin-top: 2px; }
         .mc-lock {
@@ -815,10 +834,12 @@
             z-index: 30; padding: 18px; box-sizing: border-box; text-align: center;
         }
         #pp-detail .ppd-card {
-            background: rgba(28,40,51,0.5); border: 3px solid #f1c40f; border-radius: 14px;
-            padding: 14px 16px; max-width: 320px; box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-            backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+            background: rgba(18,26,36,0.24); border: 2px solid #f1c40f; border-radius: 14px;
+            padding: 14px 16px; max-width: 320px; box-shadow: 0 10px 30px rgba(0,0,0,0.55);
+            backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px);
         }
+        /* 卡片幾乎透明，靠字的黑邊維持可讀性，讓背後爹地的臉與穿著透出來 */
+        #pp-detail .ppd-card, #pp-detail .ppd-card * { text-shadow: 0 1px 4px #000, 0 0 6px rgba(0,0,0,0.9); }
         #pp-detail .ppd-flag { font-size: 40px; }
         #pp-detail .ppd-name { font-size: 18px; font-weight: bold; color: #f1c40f; margin: 2px 0 8px; }
         #pp-detail .ppd-row { font-size: 13px; color: #ecf0f1; line-height: 1.5; margin: 5px 0; text-align: left; }
@@ -904,6 +925,14 @@
                         <div class="mc-best" id="best-casino"></div>
                     </div>
                 </div>
+                <div class="mode-card sports" id="start-sports-btn">
+                    <div class="mc-icon">🏆</div>
+                    <div class="mc-text">
+                        <div class="mc-name">運動會</div>
+                        <div class="mc-desc">🏀⚾🥊🎾⛳⚽ 六項職業運動連闖，點進去可先預覽每關</div>
+                        <div class="mc-best" id="best-sports"></div>
+                    </div>
+                </div>
                 <div class="mode-card endless locked" id="start-endless-btn">
                     <div class="mc-icon">🌙</div>
                     <div class="mc-text">
@@ -947,6 +976,16 @@
         </div>
         <!-- 點某國跳出的玩法說明（放在遊戲區層級，永遠置中、不隨護照捲動） -->
         <div id="pp-detail"><div class="ppd-card" id="ppd-card"></div></div>
+
+        <!-- 運動會預覽畫面 -->
+        <div id="sports-screen">
+            <h2>🏆 運動會　賽前預覽</h2>
+            <div id="sp-grid" class="pp-grid"></div>
+            <div class="sp-btn-row">
+                <button id="sports-start" class="small-btn go">🏆 開始運動會</button>
+                <button id="sports-close" class="small-btn">返回</button>
+            </div>
+        </div>
 
         <div id="bg-dim"></div>
         <!-- 出差：四角國旗 -->
@@ -1252,6 +1291,63 @@
                   lines: { intro: ['歡迎光臨，發財啦！', '歡迎光臨'], clear: ['嚟啦嚟啦，賭王！', '賭王駕到'], fail: ['開和唔中，唉…', '差一點'] } }
         };
         COUNTRIES.forEach(c => Object.assign(c, COUNTRY_EXTRA[c.id] || {}));
+
+        // ===== 運動會：五個職業運動關卡（獨立串連模式，不進世界出差/護照）=====
+        const SPORTS = [
+            { id: 'bk', flag: '🏀', country: '籃球', name: '灌籃奶爸', img: 'assets/country-bk.jpg', currency: '$',
+              time: 30, target: 1000, pill: 0.26, spawn: 300, bossMove: 260, speedBase: 2.6, drift: 1.2, speedMul: 0.9,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'hoops', accent: '#e67e22',
+              tip: '鈔票像籃球拋物線飛入、落地彈跳一次再掉，抓準彈跳點投進',
+              tip2: '連續投進 4 球手感發燙 🔥 HEAT，一段時間全場 ×2',
+              lang: 'zh-TW', souvenir: ['🏀', '簽名籃球'],
+              lines: { intro: ['上場啦，灌他一個！', '上場'], clear: ['This is my house！', '主場氣勢'], fail: ['三不沾…下一球', '沒進'] } },
+            { id: 'bb', flag: '⚾', country: '棒球', name: '全壘打老爹', img: 'assets/country-bb.jpg', currency: '$',
+              time: 30, target: 1000, pill: 0.26, spawn: 300, bossMove: 260, speedBase: 2.8, drift: 0, speedMul: 0.9,
+              junk: false, gold: 0.06, tool: 0.05, mech: 'homerun', accent: '#2e5cb8',
+              tip: '鈔票從打擊區大角度高速斜飛出來，金鈔是紅縫線全壘打球，飛超快',
+              tip2: '接到全壘打球連擊直接 +3',
+              lang: 'zh-TW', souvenir: ['⚾', '全壘打球'],
+              lines: { intro: ['看我這棒！', '揮棒'], clear: ['全壘打！飛出去啦！', '開轟'], fail: ['揮棒落空…', '落空'] } },
+            { id: 'bx', flag: '🥊', country: '拳擊', name: '拳王 SUGAR DADDY', img: 'assets/country-bx.jpg', currency: '$',
+              time: 30, target: 1000, pill: 0.30, spawn: 300, bossMove: 240, speedBase: 2.8, drift: 0.8, speedMul: 0.9,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'boxing', accent: '#c9a227',
+              tip: '適尿通像連環直拳成組並排快打過來，左右閃身；鈔票是場邊觀眾撒的',
+              tip2: '連擊衝到 10 放出重拳 KO，清掉全場藥盒 + 金鈔雨',
+              lang: 'zh-TW', souvenir: ['🥊', '金腰帶'],
+              lines: { intro: ['Sugar Daddy 上場！', '上場'], clear: ['KO！技術性擊倒！', '擊倒'], fail: ['被打到了…站起來', '被打'] } },
+            { id: 'tn', flag: '🎾', country: '網球', name: '底線抽球爸', img: 'assets/country-tn.jpg', currency: '$',
+              time: 30, target: 1000, pill: 0.26, spawn: 290, bossMove: 260, speedBase: 2.8, drift: 0, speedMul: 0.9,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'rally', accent: '#8bc34a',
+              tip: '鈔票邊落邊大幅左右抽球擺盪，快到眼花，看準回擺再接',
+              tip2: '接到 ACE 發球金鈔 ×2',
+              lang: 'zh-TW', souvenir: ['🎾', '網球拍'],
+              lines: { intro: ['接發球，準備！', '準備'], clear: ['Game, set, match！', '直落三'], fail: ['出界了…', '出界'] } },
+            { id: 'gf', flag: '⛳', country: '高爾夫', name: '一桿進洞爸', img: 'assets/country-gf.jpg', currency: '$',
+              time: 30, target: 1200, pill: 0.24, spawn: 260, bossMove: 300, speedBase: 3.0, drift: 0.4, speedMul: 1.0,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'golf', accent: '#1b7a3d',
+              tip: '全場安靜、等速、精準落下，微風會讓球稍微飄，門檻高',
+              tip2: '把錢包停在畫面正中央（果嶺）接到＝一桿進洞 ×3',
+              lang: 'zh-TW', souvenir: ['⛳', '高爾夫球'],
+              lines: { intro: ['噓…專心推桿', '專心'], clear: ['Birdie！漂亮！', '博蒂'], fail: ['進沙坑了…', '沙坑'] } },
+            { id: 'so', flag: '⚽', country: '足球', name: '自由球爸 YYDS', img: 'assets/country-so.jpg', currency: '$',
+              time: 30, target: 1000, pill: 0.26, spawn: 290, bossMove: 260, speedBase: 2.7, drift: 0, speedMul: 0.9,
+              junk: false, gold: 0.06, tool: 0.05, mech: 'freekick', accent: '#1e5fd0',
+              tip: '鈔票像自由球走大香蕉弧線繞過來，看準弧線落點再接',
+              tip2: '金鈔是射門球，速度快、弧線更彎，接到 ×2',
+              lang: 'zh-TW', souvenir: ['⚽', '簽名足球'],
+              lines: { intro: ['自由球，我來罰！', '罰球'], clear: ['GOAL！世界波！', '進球'], fail: ['射到人牆…', '被擋'] } }
+        ];
+        // 運動播報：預覽與開賽前用主播口吻喊一段（無 mp3 時走 TTS）
+        const SPORTS_BC = {
+            bk: '各位觀眾晚安！灌籃奶爸強勢登場，看他今天能轟下多少小費！',
+            bb: '打擊區站上來的是全壘打老爹！這一棒會不會直接飛出全場？',
+            bx: '紅方，拳王 Sugar Daddy！今晚要用拳頭賺進多少獎金，我們拭目以待！',
+            tn: '底線抽球爸的發球局開始！這一分，落點誰也說不準！',
+            gf: '請全場保持安靜，一桿進洞爸準備推桿，屏息以待這神聖的一擊！',
+            so: '自由球爸站上罰球點，YYDS！這一腳會不會是驚天世界波！'
+        };
+        SPORTS.forEach(s => { s.bc = SPORTS_BC[s.id]; });
+
         function sayLine(lv, key) {
             if (!lv || !lv.lines) return '';
             const [native, zh] = lv.lines[key];
@@ -1272,6 +1368,7 @@
         let slotBoostUntil = 0;        // 拉斯維加斯：雙 7 連擊 ×2 到幾點
         let rouletteColor = 'red';     // 摩納哥：本輪開的顏色 red/black/green
         let bacBoostUntil = 0;         // 澳門：押中後全場 ×2 到幾點
+        let hoopsBoostUntil = 0;       // 籃球：HEAT 手感發燙全場 ×2 到幾點
 
         const TRIP_STOPS = 3;          // 已不再限制站數，保留常數避免其他引用出錯
         let tripStop = 0;              // 本趟出差累計到第幾站（跨越洗牌）
@@ -1286,7 +1383,11 @@
         }
         let trip = false;              // 目前是否在出差模式
         let casinoTour = false;        // 賭城之旅：固定三站（拉斯維加斯→摩納哥→澳門）的有限出差
+        let sportsDay = false;         // 運動會：固定五站職業運動的有限串連
         const CASINO_IDS = ['us', 'mc', 'mo'];
+        function finiteTour() { return casinoTour || sportsDay; }
+        let tourPass = 0;              // 有限串連中「達標過關」的站數（賭神／奧運金牌用）
+        let peakCombo = 0;             // 本關達到的最高連擊（完美演出用）
         let tripLevels = [];           // 這趟出差抽到的國家（依序）
         function curLevels() { return trip ? tripLevels : LEVELS; }
         function lastLevelIdx() { return curLevels().length - 1; }
@@ -1577,6 +1678,27 @@
                 speechSynthesis.speak(u);
             } catch (e) {}
         }
+        // 運動播報：優先播 assets/voice/<id>-bc.mp3，沒有就用較熱血的 TTS 口吻
+        let bcAudio = null;
+        function playBroadcast(lv) {
+            if (sfxMuted || !lv || !lv.bc) return;
+            try { if (bcAudio) bcAudio.pause(); } catch (e) {}
+            const sayHype = () => {
+                if (!window.speechSynthesis) return;
+                try {
+                    speechSynthesis.cancel();
+                    const u = new SpeechSynthesisUtterance(lv.bc);
+                    u.lang = lv.lang || 'zh-TW'; u.rate = 1.12; u.pitch = 1.15; u.volume = 1;
+                    speechSynthesis.speak(u);
+                } catch (e) {}
+            };
+            try {
+                bcAudio = new Audio(`assets/voice/${lv.id}-bc.mp3`);
+                bcAudio.volume = 1;
+                const p = bcAudio.play();
+                if (p && p.catch) p.catch(sayHype);
+            } catch (e) { sayHype(); }
+        }
         function ensureAudio() {
             if (!audioCtx) {
                 try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
@@ -1687,7 +1809,19 @@
             mc: { bpm: 100, wave: 'triangle', bass: [45, 52, 57, 52],
                   melody: [[69,1],[73,1],[76,1.5],[74,.5],[73,1],[69,1],[71,2],[76,1],[74,1],[73,.5],[71,.5],[69,1],[68,1],[69,2]] },
             mo: { bpm: 108, wave: 'sine',     bass: [50, 0, 57, 0],
-                  melody: [[72,1],[74,.5],[76,.5],[79,1],[76,1],[74,.5],[72,.5],[69,1],[67,.5],[69,.5],[72,1],[76,1],[74,1],[72,2]] }
+                  melody: [[72,1],[74,.5],[76,.5],[79,1],[76,1],[74,.5],[72,.5],[69,1],[67,.5],[69,.5],[72,1],[76,1],[74,1],[72,2]] },
+            bk: { bpm: 144, wave: 'square',   bass: [48, 48, 55, 53],
+                  melody: [[72,.5],[72,.5],[76,.5],[79,.5],[77,.5],[76,.5],[72,1],[74,.5],[76,.5],[79,1],[76,.5],[74,.5],[72,1]] },
+            bb: { bpm: 128, wave: 'triangle', bass: [43, 50, 55, 50],
+                  melody: [[67,.5],[72,.5],[76,1],[72,.5],[67,.5],[69,1],[71,.5],[74,.5],[79,1],[76,.5],[74,.5],[72,2]] },
+            bx: { bpm: 150, wave: 'sawtooth', bass: [45, 45, 45, 52],
+                  melody: [[69,.5],[69,.5],[72,.5],[69,.5],[65,.5],[65,.5],[67,1],[69,.5],[72,.5],[76,.5],[72,.5],[69,1]] },
+            tn: { bpm: 120, wave: 'triangle', bass: [50, 57, 52, 57],
+                  melody: [[76,.5],[74,.5],[72,.5],[74,.5],[76,.5],[79,.5],[77,1],[76,.5],[74,.5],[72,.5],[71,.5],[72,1]] },
+            gf: { bpm: 88,  wave: 'sine',     bass: [48, 0, 55, 0],
+                  melody: [[72,1],[76,1],[79,1.5],[76,.5],[74,1],[72,1],[67,2],[69,1],[72,1],[74,2]] },
+            so: { bpm: 132, wave: 'square',   bass: [45, 52, 57, 52],
+                  melody: [[69,.5],[71,.5],[72,.5],[74,.5],[76,1],[74,.5],[72,.5],[69,1],[76,.5],[76,.5],[77,.5],[79,.5],[81,2]] }
         };
         const MUSIC_VOL = 0.07;
         let musicTimer = null, musicNodes = [], musicAudio = null, musicId = null;
@@ -1779,7 +1913,21 @@
             { id: 'jackpot',  icon: '🎰', name: '幸運七',     desc: '拉斯維加斯老虎機轉出 7️⃣7️⃣7️⃣' },
             { id: 'roulette', icon: '🎡', name: '押中綠 0',   desc: '摩納哥輪盤開出 🟢 綠 0 金雨' },
             { id: 'baccarat', icon: '🀄', name: '賭王和局',   desc: '澳門百家樂開出和局大爆發' },
-            { id: 'highroller', icon: '🎲', name: '賭城通吃', desc: '拉斯維加斯、摩納哥、澳門都蓋過章' }
+            { id: 'highroller', icon: '🎲', name: '賭城通吃', desc: '拉斯維加斯、摩納哥、澳門都蓋過章' },
+            { id: 'heat',       icon: '🏀', name: '手感發燙', desc: '籃球關連續投進觸發 HEAT' },
+            { id: 'homer',      icon: '⚾', name: '開轟',     desc: '棒球關接到全壘打球' },
+            { id: 'ko',         icon: '🥊', name: '一擊 KO',  desc: '拳擊關放出重拳清場' },
+            { id: 'ace',        icon: '🎾', name: 'ACE',      desc: '網球關接到 ACE 發球金鈔' },
+            { id: 'holeinone',  icon: '⛳', name: '一桿進洞', desc: '高爾夫關正中果嶺接到' },
+            { id: 'screamer',   icon: '⚽', name: '世界波',   desc: '足球關接到射門金球' },
+            { id: 'sportsmaster', icon: '🏆', name: '全能運動員', desc: '完成一次運動會全部關卡' },
+            // ── 高難度 ──
+            { id: 'combo30',   icon: '⚡', name: '連擊 ×30',   desc: '單次連擊達到 30，一張都不能漏' },
+            { id: 'perfect',   icon: '💎', name: '完美演出',   desc: '一關內連擊上看 15、全程滴藥不沾且達標' },
+            { id: 'rich50',    icon: '👑', name: '富可敵國',   desc: '單場總小費超過 $50000' },
+            { id: 'ot300',     icon: '🧛', name: '賣肝之王',   desc: '加班模式硬撐過 300 秒' },
+            { id: 'casinopro', icon: '🃏', name: '賭神',       desc: '賭城之旅三站全部達標過關' },
+            { id: 'goldmedal', icon: '🥇', name: '奧運金牌',   desc: '運動會全部關卡都達標過關' }
         ];
 
         // ===== 護照（出差過的國家）=====
@@ -1845,7 +1993,7 @@
             const pd = document.getElementById('pp-detail');
             // 背景放該國爹地照，蓋一層暗色讓卡片字看得清楚
             pd.style.backgroundImage =
-                `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.35)), url('${c.img}${AV}')`;
+                `linear-gradient(rgba(0,0,0,0.22), rgba(0,0,0,0.12)), url('${c.img}${AV}')`;
             pd.style.backgroundSize = 'cover';
             pd.style.backgroundPosition = 'center 20%';
             pd.style.display = 'flex';
@@ -1868,6 +2016,50 @@
             document.getElementById('passport-screen').style.display = 'none';
         });
         renderPassportBtn();
+
+        // ===== 運動會預覽 =====
+        function renderSports() {
+            document.getElementById('sp-grid').innerHTML = SPORTS.map(s => `
+                <div class="pp-item" data-id="${s.id}">
+                    <img src="${s.img}${AV}" alt="">
+                    <div class="pp-name">${s.flag} ${s.country}</div>
+                    <div class="pp-mech">${s.name}</div>
+                </div>`).join('');
+        }
+        // 點某項運動：顯示玩法說明並用主播口吻播報
+        function showSportDetail(s) {
+            document.getElementById('ppd-card').innerHTML =
+                `<div class="ppd-flag">${s.flag}</div>` +
+                `<div class="ppd-name">${s.country} · ${s.name}</div>` +
+                `<div class="ppd-say">📣 ${s.bc}</div>` +
+                `<div class="ppd-row"><b>⭐ 特色：</b>${s.tip}</div>` +
+                (s.tip2 ? `<div class="ppd-row"><b>✨ 隱藏玩法：</b>${s.tip2}</div>` : '') +
+                `<div class="ppd-row"><b>🎁 特產：</b>${s.souvenir[0]} ${s.souvenir[1]}</div>`;
+            playBroadcast(s);
+            const pd = document.getElementById('pp-detail');
+            pd.style.backgroundImage =
+                `linear-gradient(rgba(0,0,0,0.22), rgba(0,0,0,0.12)), url('${s.img}${AV}')`;
+            pd.style.backgroundSize = 'cover';
+            pd.style.backgroundPosition = 'center 20%';
+            pd.style.display = 'flex';
+        }
+        document.getElementById('start-sports-btn').addEventListener('click', () => {
+            renderSports();
+            document.getElementById('sports-screen').style.display = 'flex';
+        });
+        document.getElementById('sp-grid').addEventListener('click', (e) => {
+            const item = e.target.closest('.pp-item'); if (!item) return;
+            const s = SPORTS.find(x => x.id === item.dataset.id);
+            if (s) showSportDetail(s);
+        });
+        document.getElementById('sports-close').addEventListener('click', () => {
+            document.getElementById('sports-screen').style.display = 'none';
+        });
+        document.getElementById('sports-start').addEventListener('click', () => {
+            document.getElementById('sports-screen').style.display = 'none';
+            document.getElementById('pp-detail').style.display = 'none';
+            newSports();
+        });
         let achUnlocked = load('wyd_ach', {});
         let runAch = [];              // 本場新解鎖的成就
         let pillsThisLevel = 0;       // 本關吃到的藥盒數（含巨型）
@@ -2010,9 +2202,11 @@
 
         function addCombo() {
             combo += 1;
+            if (combo > peakCombo) peakCombo = combo;
             if (combo >= 2) { showComboFlash(); sfx.combo(combo); }
             if (combo >= 10) unlock('combo10');
             if (combo >= 20) unlock('combo20');
+            if (combo >= 30) unlock('combo30');
             if (!isPlaying || !trip) return;
             const m = curLv().mech;
             // 墨西哥第二層：每 5 連擊，帽子噴一波辣椒藥盒
@@ -2045,6 +2239,21 @@
                 spawnItem(0, 'gold');
                 popText(130, 200, '🛵 大鈔來了！', '#ffd700');
             }
+            // 籃球：連續投進 4 球手感發燙 HEAT，全場 ×2 六秒
+            if (m === 'hoops' && combo > 0 && combo % 4 === 0) {
+                hoopsBoostUntil = Date.now() + 6000;
+                unlock('heat');
+                popText(120, 260, '🔥 HEAT！手感發燙 ×2', '#e67e22'); sfx.gold();
+            }
+            // 拳擊：連擊到 10 放出重拳 KO，清場 + 金鈔雨
+            if (m === 'boxing' && combo === 10) { koPunch(); }
+        }
+        // 拳擊重拳 KO：清掉全場藥盒，天降金鈔雨
+        function koPunch() {
+            container.querySelectorAll('.falling-item.pill-box').forEach(el => el.remove());
+            unlock('ko');
+            popText(110, 260, '🥊 KO！技術性擊倒 + 金鈔雨', '#f1c40f');
+            sfx.mega(); goldRain(6);
         }
 
         function showComboFlash() {
@@ -2247,6 +2456,7 @@
             lifeSpawnedThisLevel = 0;
             timeLeft = lv.time;
             combo = 0;                 // 直接歸零，避免韓國的斷擊罰金在開關時觸發
+            peakCombo = 0;             // 完美演出：每關重算最高連擊
             isPlaying = true;
             resetMega();
             resetBasket();
@@ -2289,7 +2499,7 @@
             clearTimeout(souvenirTimer);
             if (trip) souvenirTimer = setTimeout(() => spawnItem(0, 'souvenir'), 8000 + Math.random() * 12000);   // 已收集過也掉，當獎金
             fakeCount = 0; pillPauseUntil = 0; comboShieldUntil = 0; postSiesta = false;
-            slotCount = 0; slotBoostUntil = 0; bacBoostUntil = 0; rouletteColor = 'red'; hideHud();
+            slotCount = 0; slotBoostUntil = 0; bacBoostUntil = 0; hoopsBoostUntil = 0; rouletteColor = 'red'; hideHud();
             if (curLv().mech === 'roulette') rouletteFlip();
 
             gameInterval = setInterval(() => {
@@ -2305,6 +2515,7 @@
                     }
                     if (elapsed >= 60)  unlock('ot60');
                     if (elapsed >= 120) unlock('ot120');
+                    if (elapsed >= 300) unlock('ot300');
                     return;
                 }
                 timeLeft--;
@@ -2337,6 +2548,8 @@
                 if (timeLeft <= 0) endLevel();
             }, 1000);
 
+            // 運動會：開賽前來一段運動主播
+            if (sportsDay) playBroadcast(lv);
             // 爹地移動與掉落物生成都用鏈式 setTimeout，每次重新讀 curLv()，加班模式才能逐步加速
             scheduleBoss();
             scheduleSpawn();
@@ -2356,6 +2569,7 @@
             else {
                 const t = spawnItem(0);
                 if (mech === 'spicy' && t === 'pill') spawnItem(1);   // 泰國：藥盒一次兩盒並排
+                if (mech === 'boxing' && t === 'pill') { spawnItem(-1, 'pill'); spawnItem(1, 'pill'); }   // 拳擊：連環直拳成組並排
             }
             spawnTimer = setTimeout(scheduleSpawn, curLv().spawn);
         }
@@ -2391,6 +2605,10 @@
                 bank += score;
                 sfx.clear();
                 if (pillsThisLevel === 0) unlock('clean');
+                // 完美演出：達標 + 滴藥不沾 + 本關連擊上看 15
+                if (pillsThisLevel === 0 && peakCombo >= 15) unlock('perfect');
+                // 賭神／奧運金牌：記錄有限串連中達標過關的站數
+                if (finiteTour()) tourPass++;
                 if (!trip && levelIdx === WIN_AFTER_LEVEL) {
                     // 三關全過：解鎖加班模式與相關成就，再播影片
                     save('wyd_endless', true);
@@ -2399,16 +2617,21 @@
                     if (hairLevel <= 2) unlock('hairy');
                     if (hairLevel >= 8) unlock('bald');
                     if (bank >= 10000) unlock('rich');
+                    if (bank >= 50000) unlock('rich50');
                     playWinVideo();
                     return;
                 }
                 if (trip) {
-                    // 出差：蓋章，直接前往下一站（命還在就一直玩下去）
-                    stampPassport(lv.id);
-                    unlock('trip1');
+                    // 運動會：運動不是國家，不蓋護照章；其餘（含賭城）照常蓋章
+                    if (!sportsDay) { stampPassport(lv.id); unlock('trip1'); }
                     if (bank >= 10000) unlock('rich');
-                    // 賭城之旅：跑完第三站就圓滿結束，不再往下抽
-                    if (casinoTour && levelIdx >= tripLevels.length - 1) { finish('tripclear'); return; }
+                    // 有限串連（賭城之旅／運動會）：跑完最後一站就圓滿結束，不再往下抽
+                    if (finiteTour() && levelIdx >= tripLevels.length - 1) {
+                        if (sportsDay) unlock('sportsmaster');
+                        // 全站達標才給高難度成就
+                        if (tourPass >= tripLevels.length) unlock(casinoTour ? 'casinopro' : 'goldmedal');
+                        finish('tripclear'); return;
+                    }
                     advanceTrip();
                     const nx = curLevels()[levelIdx];
                     levelTitle.innerText = '✅ 過關！蓋章前往下一站';
@@ -2439,8 +2662,11 @@
                 if (lives <= 0) { finish('broke'); return; }
                 sfx.fail();
                 if (trip) {
-                    // 賭城之旅：第三站就算沒達標也是最後一站，直接結算
-                    if (casinoTour && levelIdx >= tripLevels.length - 1) { finish('tripclear'); return; }
+                    // 有限串連：最後一站就算沒達標也直接結算
+                    if (finiteTour() && levelIdx >= tripLevels.length - 1) {
+                        if (sportsDay) unlock('sportsmaster');
+                        finish('tripclear'); return;
+                    }
                     // 出差沒達標：用掉一命，但仍直接前往下一站，不卡在原地
                     advanceTrip();
                     const nx = curLevels()[levelIdx];
@@ -2505,9 +2731,10 @@
             const total = bank + (reason === 'clear' || reason === 'tripclear' ? 0 : score);
             const mode = endless ? 'endless' : trip ? 'trip' : 'story';
             if (total >= 10000) unlock('rich');
+            if (total >= 50000) unlock('rich50');
 
             if (reason === 'tripclear') {
-                h2.innerText = casinoTour ? '🎰 賭城之旅圓滿！' : '🛂 出差圓滿！';
+                h2.innerText = sportsDay ? '🏆 運動會閉幕！' : casinoTour ? '🎰 賭城之旅圓滿！' : '🛂 出差圓滿！';
                 const flags = tripLevels.map(l => l.flag).join(' ');
                 const last = tripLevels[tripLevels.length - 1];
                 finalScore.innerHTML =
@@ -2842,6 +3069,8 @@
             let type, value = 0;
             // 瑞士：等速、精準
             if (lv.mech === 'clockwork') speed = lv.speedBase * lv.speedMul + 1.4;
+            // 高爾夫：全場等速、安靜精準（像推桿）
+            if (lv.mech === 'golf') speed = lv.speedBase * lv.speedMul + 1.0;
 
             // 機率累加：藥盒 → 道具 → 金色鈔票 → 干擾小鈔 → 一般鈔票
             // 藥盒機率和速度隨連擊等比增加
@@ -2971,6 +3200,15 @@
                 const dir = Math.random() < 0.5 ? -1 : 1;
                 drift = dir * (lv.drift * (0.45 + Math.random() * 0.55));
             }
+            // 棒球：大角度高速斜飛出來
+            if (lv.mech === 'homerun') {
+                const dir = Math.random() < 0.5 ? -1 : 1;
+                drift = dir * (2.5 + Math.random() * 1.8);
+                speed += (type === 'gold') ? 3 : 1.5;
+            }
+            // 籃球：拋物線 + 落地彈跳一次
+            let vy = speed, bounced = false;
+            const bounceFloor = 415 + Math.random() * 55;
             let x = parseFloat(item.style.left);
             let baseX = x;                         // 中心線（迴力鏢會重設）
             const sineAmp = 60 + Math.random() * 30;
@@ -2982,7 +3220,16 @@
                 if (!isPlaying) { item.remove(); return; }
                 if (paused) { requestAnimationFrame(fall); return; }
                 if (frozen) { requestAnimationFrame(fall); return; }   // 西班牙：午睡，全部停住
-                topPos += speed;
+                if (lv.mech === 'hoops') {
+                    // 籃球：重力加速 + 落地彈起一次
+                    vy += 0.4;
+                    topPos += vy;
+                    if (!bounced && topPos >= bounceFloor) {
+                        topPos = bounceFloor; vy = -vy * 0.6; bounced = true;
+                    }
+                } else {
+                    topPos += speed;
+                }
                 // 土耳其：鈔票掉到一半被收回去一段，再放下來
                 if (lv.mech === 'stretch' && !stretched && /^\d+$/.test(type)
                     && topPos > 260 && Math.random() < 0.03) {
@@ -2992,10 +3239,11 @@
                 if (stretchLeft > 0) { stretchLeft--; topPos -= speed * 1.8; }
                 item.style.top = topPos + 'px';
                 const w = item.offsetWidth || 68;
-                if (lv.mech === 'sine' || lv.mech === 'windmill' || lv.mech === 'reggae') {
-                    // 印度 S 形 / 荷蘭大風車 / 牙買加輕搖
-                    const amp = lv.mech === 'windmill' ? 95 : lv.mech === 'reggae' ? 32 : sineAmp;
-                    const spd = lv.mech === 'reggae' ? 70 : 48;
+                if (lv.mech === 'sine' || lv.mech === 'windmill' || lv.mech === 'reggae' || lv.mech === 'rally' || lv.mech === 'freekick') {
+                    // 印度 S 形 / 荷蘭大風車 / 牙買加輕搖 / 網球大幅抽球 / 足球香蕉弧線
+                    const amp = lv.mech === 'windmill' ? 95 : lv.mech === 'reggae' ? 32 : lv.mech === 'rally' ? 115
+                              : lv.mech === 'freekick' ? (type === 'gold' ? 130 : 100) : sineAmp;
+                    const spd = lv.mech === 'reggae' ? 70 : lv.mech === 'rally' ? 30 : lv.mech === 'freekick' ? 95 : 48;
                     x = baseX + amp * Math.sin((topPos - 125) / spd + sinePhase);
                     x = Math.max(0, Math.min(containerWidth - w, x));
                     item.style.left = x + 'px';
@@ -3140,6 +3388,16 @@
                         if (lv.mech === 'whiteout' && Date.now() < whiteUntil)            { gain = Math.round(gain * 1.5); tag += ' ☀️×1.5'; }   // 冰島：永晝白光中
                         // 拉斯維加斯：雙 7 期間全場 ×2
                         if (lv.mech === 'slot' && Date.now() < slotBoostUntil)           { gain *= 2; tag += ' 🎰×2'; }
+                        // 籃球：HEAT 手感發燙期間全場 ×2
+                        if (lv.mech === 'hoops' && Date.now() < hoopsBoostUntil)         { gain *= 2; tag += ' 🔥×2'; }
+                        // 棒球：金鈔＝全壘打球，連擊 +3
+                        if (lv.mech === 'homerun' && type === 'gold')                    { combo += 3; unlock('homer'); tag += ' ⚾HR'; }
+                        // 網球：金鈔＝ACE 發球，×2
+                        if (lv.mech === 'rally' && type === 'gold')                      { gain *= 2; unlock('ace'); tag += ' 🎾ACE×2'; }
+                        // 高爾夫：錢包停在畫面正中央（果嶺）接到＝一桿進洞 ×3
+                        if (lv.mech === 'golf' && Math.abs(basketX + basketWidth / 2 - containerWidth / 2) < 34) { gain *= 3; unlock('holeinone'); tag += ' ⛳一桿進洞×3'; }
+                        // 足球：金鈔＝射門球，×2
+                        if (lv.mech === 'freekick' && type === 'gold')                   { gain *= 2; unlock('screamer'); tag += ' ⚽世界波×2'; }
                         // 澳門：押中百家樂那家 → 全場 ×2
                         if (lv.mech === 'baccarat' && Date.now() < bacBoostUntil)        { gain *= 2; tag += ' 🀄×2'; }
                         // 摩納哥：接對輪盤顏色 ×3；綠 0 全色 ×3；接錯色沒錢也不算門檻
@@ -3205,14 +3463,14 @@
         }
         function newGame() {
             ensureAudio();
-            endless = false; trip = false; casinoTour = false;
+            endless = false; trip = false; casinoTour = false; sportsDay = false;
             resetRun();
             showLevelIntro();
         }
         // 世界出差：全國家隨機排序，一站接一站
         function newTrip() {
             ensureAudio();
-            endless = false; trip = true; casinoTour = false;
+            endless = false; trip = true; casinoTour = false; sportsDay = false;
             resetRun();
             tripLevels = COUNTRIES.slice().sort(() => Math.random() - 0.5);   // 全部國家隨機排序
             tripStop = 1;
@@ -3221,16 +3479,25 @@
         // 賭城之旅：固定三站（拉斯維加斯 → 摩納哥 → 澳門）
         function newCasino() {
             ensureAudio();
-            endless = false; trip = true; casinoTour = true;
-            resetRun();
+            endless = false; trip = true; casinoTour = true; sportsDay = false;
+            resetRun(); tourPass = 0;
             tripLevels = CASINO_IDS.map(id => COUNTRIES.find(c => c.id === id));
+            tripStop = 1;
+            showLevelIntro();
+        }
+        // 運動會：固定五站職業運動
+        function newSports() {
+            ensureAudio();
+            endless = false; trip = true; casinoTour = false; sportsDay = true;
+            resetRun(); tourPass = 0;
+            tripLevels = SPORTS.slice();
             tripStop = 1;
             showLevelIntro();
         }
         // 從開始畫面進加班：全新一場，髮量 0
         function newEndless() {
             ensureAudio();
-            endless = true; trip = false; casinoTour = false;
+            endless = true; trip = false; casinoTour = false; sportsDay = false;
             resetRun();
             startScreen.style.display = 'none';
             startLevel();
