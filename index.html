@@ -1715,7 +1715,7 @@
                 scoreDisplay.style.color = score < 0 ? '#e74c3c' : '#f1c40f';
                 return;
             }
-            const lv = LEVELS[levelIdx];
+            const lv = curLevels()[levelIdx];
             // 上行：實收面額 / 門檻；下行：含加成的小費
             scoreDisplay.innerHTML =
                 `${fmtMoney(raw)} / $${lv.target}<br>` +
