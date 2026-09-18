@@ -776,15 +776,15 @@
 
         // ===== 關卡設定 =====
         const LEVELS = [
-            { name: '關卡一 · 隨手給幾張', time: 28, target: 800,
+            { name: '關卡一 · 隨手給幾張', time: 28, target: 700,
               pill: 0.20, spawn: 290, bossMove: 300, speedBase: 3,
               drift: 0,   speedMul: 1.0, junk: false, gold: 0,    tool: 0.04,
               tip: '全部垂直落下，沒有斜線，穩穩接就好' },
-            { name: '關卡二 · 爹地心情好', time: 27, target: 1800,
+            { name: '關卡二 · 爹地心情好', time: 27, target: 900,
               pill: 0.27, spawn: 300, bossMove: 270, speedBase: 2.8,
               drift: 1.8, speedMul: 0.7, junk: false, gold: 0.04, tool: 0.05,
               tip: '開始走斜線，還有金鈔；連擊越高藥盒越多越快' },
-            { name: '關卡三 · 天女散花', time: 25, target: 2500,
+            { name: '關卡三 · 天女散花', time: 25, target: 1100,
               pill: 0.30, spawn: 270, bossMove: 250, speedBase: 2.9,
               drift: 2.2, speedMul: 0.74, junk: true, gold: 0.07, tool: 0.06,
               tip: '斜線更斜，小鈔會糊你一臉、還會斷連擊' }
@@ -796,39 +796,39 @@
         // mech: disguise（日本）dual（墨西哥）sine（印度）wind（蘇格蘭）goldrush（埃及）confetti（巴西）
         const COUNTRIES = [
             { id: 'jp', flag: '🇯🇵', country: '日本',   name: '東京 · 便當陷阱',   img: 'assets/country-japan.jpg',    currency: '¥',
-              time: 30, target: 1800, pill: 0.28, spawn: 240, bossMove: 260, speedBase: 3.0, drift: 0,   speedMul: 0.95,
+              time: 30, target: 900,  pill: 0.28, spawn: 240, bossMove: 260, speedBase: 3.0, drift: 0,   speedMul: 0.95,
               junk: false, gold: 0.04, tool: 0.05, mech: 'disguise', accent: '#e53e3e',
               tip: '有些「¥50」其實是藥盒，掉到一半才會露出真面目' },
             { id: 'mx', flag: '🇲🇽', country: '墨西哥', name: '墨西哥 · 帽子雙軌',  img: 'assets/country-mexico.jpg',   currency: 'MX$',
-              time: 30, target: 2000, pill: 0.26, spawn: 420, bossMove: 300, speedBase: 2.8, drift: 0.8, speedMul: 0.9,
+              time: 30, target: 1000, pill: 0.26, spawn: 420, bossMove: 300, speedBase: 2.8, drift: 0.8, speedMul: 0.9,
               junk: false, gold: 0.05, tool: 0.05, mech: 'dual', accent: '#2e8b57',
               tip: '掉落物從大帽子兩側同時掉，兩邊都要顧' },
             { id: 'in', flag: '🇮🇳', country: '印度',   name: '印度 · 寶萊塢 S 舞步', img: 'assets/country-india.jpg',  currency: '₹',
-              time: 30, target: 1800, pill: 0.27, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 0,   speedMul: 0.9,
+              time: 30, target: 900,  pill: 0.27, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 0,   speedMul: 0.9,
               junk: false, gold: 0.05, tool: 0.05, mech: 'sine', accent: '#ff9933',
               tip: '所有東西都跳 S 形舞步，看準擺回來的時機再接' },
             { id: 'sc', flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', country: '蘇格蘭', name: '蘇格蘭 · 高地強風',  img: 'assets/country-scotland.jpg', currency: '£',
-              time: 30, target: 1800, pill: 0.27, spawn: 290, bossMove: 270, speedBase: 2.9, drift: 0.6, speedMul: 0.9,
+              time: 30, target: 900,  pill: 0.27, spawn: 290, bossMove: 270, speedBase: 2.9, drift: 0.6, speedMul: 0.9,
               junk: false, gold: 0.05, tool: 0.05, mech: 'wind', accent: '#3b82f6',
               tip: '風每 5 秒換向，所有東西都會被吹偏，注意畫面上方的風向' },
             { id: 'eg', flag: '🇪🇬', country: '埃及',   name: '埃及 · 法老金庫',   img: 'assets/country-egypt.jpg',    currency: 'E£',
-              time: 30, target: 2600, pill: 0.36, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 1.2, speedMul: 0.9,
+              time: 30, target: 1300, pill: 0.36, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 1.2, speedMul: 0.9,
               junk: false, gold: 0.16, tool: 0.05, mech: 'goldrush', accent: '#d4a017',
               tip: '金鈔特別多，藥盒也特別多，貪多就秒禿' },
             { id: 'br', flag: '🇧🇷', country: '巴西',   name: '巴西 · 嘉年華彩帶',  img: 'assets/country-brazil.jpg',   currency: 'R$',
-              time: 30, target: 2000, pill: 0.27, spawn: 270, bossMove: 250, speedBase: 2.9, drift: 1.5, speedMul: 0.9,
+              time: 30, target: 1000, pill: 0.27, spawn: 270, bossMove: 250, speedBase: 2.9, drift: 1.5, speedMul: 0.9,
               junk: true,  gold: 0.05, tool: 0.05, mech: 'confetti', accent: '#22c55e',
               tip: '彩帶會隨時飄過來遮住畫面，被遮住時憑感覺也要接' },
             { id: 'kr', flag: '🇰🇷', country: '韓國',   name: '首爾 · 連擊狂熱',   img: 'assets/country-korea.jpg',    currency: '₩',
-              time: 30, target: 2400, pill: 0.27, spawn: 270, bossMove: 250, speedBase: 2.9, drift: 1.0, speedMul: 0.9,
+              time: 30, target: 1000, pill: 0.27, spawn: 270, bossMove: 250, speedBase: 2.9, drift: 1.0, speedMul: 0.9,
               junk: false, gold: 0.05, tool: 0.05, mech: 'kcombo', accent: '#3b5bdb',
               tip: '連擊倍率翻倍，但斷擊要罰錢：連擊 ×N 斷掉扣 N×10' },
             { id: 'mn', flag: '🇲🇳', country: '蒙古',   name: '蒙古 · 草原追擊',   img: 'assets/country-mongolia.jpg', currency: '₮',
-              time: 30, target: 2000, pill: 0.30, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 0.6, speedMul: 0.9,
+              time: 30, target: 1000, pill: 0.30, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 0.6, speedMul: 0.9,
               junk: false, gold: 0.05, tool: 0.05, mech: 'homing', accent: '#c0392b',
               tip: '藥盒會像騎兵一樣朝你的錢包追過來，用速度甩開它' },
             { id: 'ke', flag: '🇰🇪', country: '肯亞',   name: '肯亞 · 馬拉松爹地',  img: 'assets/country-kenya.jpg',    currency: 'KSh',
-              time: 30, target: 2200, pill: 0.22, spawn: 200, bossMove: 110, speedBase: 2.9, drift: 0.4, speedMul: 0.9,
+              time: 30, target: 1100, pill: 0.22, spawn: 200, bossMove: 110, speedBase: 2.9, drift: 0.4, speedMul: 0.9,
               junk: false, gold: 0.05, tool: 0.05, mech: 'sprint', accent: '#111111',
               tip: '爹地跑得飛快、撒得又密，落點完全不能預測' }
         ];
@@ -900,7 +900,8 @@
 
         let levelIdx  = 0;     // 目前關卡 0~2
         let bank      = 0;     // 已過關累積的錢
-        let score     = 0;     // 本關分數
+        let score     = 0;     // 本關小費（含連擊倍率、高空加成，用於排行榜）
+        let raw       = 0;     // 本關實收面額（只算鈔票面額，過關門檻用這個）
         let hairLevel = 0;     // 0~8，整場累積、不隨關卡重置
         let timeLeft  = 0;
         let gameInterval, spawnTimer, bossTimer, splashTimer, megaTimer;
@@ -1179,9 +1180,11 @@
                 return;
             }
             const lv = LEVELS[levelIdx];
-            scoreDisplay.innerText = `${fmtMoney(score)} / $${lv.target}`;
-            scoreDisplay.style.color = score < 0 ? '#e74c3c'
-                                     : score >= lv.target ? '#2ecc71' : '';
+            // 上行：實收面額 / 門檻；下行：含加成的小費
+            scoreDisplay.innerHTML =
+                `${fmtMoney(raw)} / $${lv.target}<br>` +
+                `<span class="lv-name" style="color:#f1c40f">小費 ${fmtMoney(score)}</span>`;
+            scoreDisplay.style.color = raw >= lv.target ? '#2ecc71' : '';
         }
 
         // 高空加成：錢包在最低點 ×1.0，最高點 ×1.5，線性
@@ -1322,7 +1325,8 @@
             else levelImg.style.display = 'none';
             levelBody.innerHTML =
                 (trip ? `第 ${levelIdx + 1} 站 / ${tripLevels.length}　` : '') +
-                `目標：<span style="color:#f1c40f">$${lv.target}</span>　達標即過關　限時 ${lv.time} 秒<br>` +
+                `目標：實收面額 <span style="color:#f1c40f">$${lv.target}</span>　限時 ${lv.time} 秒<br>` +
+                `<span class="lv-tip">門檻只算接到的鈔票面額，連擊與高空加成算進小費不算門檻</span><br>` +
                 `<span style="color:#f39c12;font-weight:bold">⭐ 本關特色：</span><span class="lv-tip" style="color:#ecf0f1">${lv.tip}</span><br>` +
                 `目前髮量 <span style="color:#f5b041">${hairLevel + 1}/9</span>　` +
                 `已存 <span style="color:#2ecc71">${fmtMoney(bank)}</span>　${livesHtml()}`;
@@ -1338,7 +1342,7 @@
             stopLevel();               // 收掉任何殘留的 interval 與掉落物
             ensureAudio();
             const lv = curLv();
-            score = 0;                 // 沒過關重玩 → 本關分數歸零
+            score = 0; raw = 0;        // 沒過關重玩 → 本關分數歸零
             pillsThisLevel = 0;
             lifeSpawnedThisLevel = 0;
             timeLeft = lv.time;
@@ -1443,7 +1447,7 @@
         function endLevel() {
             stopLevel();
             const lv = curLevels()[levelIdx];
-            if (score >= lv.target) {
+            if (raw >= lv.target) {
                 bank += score;
                 sfx.clear();
                 if (pillsThisLevel === 0) unlock('clean');
@@ -1463,7 +1467,7 @@
                 levelIdx++;
                 levelTitle.innerText = '✅ 過關！';
                 levelBody.innerHTML =
-                    `這關賺了 <span style="color:#2ecc71">${fmtMoney(score)}</span>　` +
+                    `實收 <span style="color:#2ecc71">${fmtMoney(raw)}</span>　小費 <span style="color:#f1c40f">${fmtMoney(score)}</span>　` +
                     `累積 <span style="color:#2ecc71">${fmtMoney(bank)}</span><br>` +
                     `髮量 <span style="color:#f5b041">${hairLevel + 1}/9</span>　` +
                     `下一${trip ? '站' : '關'}：${trip ? curLevels()[levelIdx].flag + ' ' : ''}${curLevels()[levelIdx].name}`;
@@ -1478,8 +1482,8 @@
                 sfx.fail();
                 levelTitle.innerText = '❌ 爹地收手了';
                 levelBody.innerHTML =
-                    `只收到 <span style="color:#e74c3c">${fmtMoney(score)}</span>，` +
-                    `差 <span style="color:#e74c3c">${fmtMoney(lv.target - score)}</span><br>` +
+                    `實收面額只有 <span style="color:#e74c3c">${fmtMoney(raw)}</span>，` +
+                    `差 <span style="color:#e74c3c">${fmtMoney(lv.target - raw)}</span><br>` +
                     `用掉一命 → 剩 ${livesHtml()}<br>` +
                     `<span class="lv-tip">本關分數歸零重來，但髮量不會還你</span><br>` +
                     `目前髮量 <span style="color:#f5b041">${hairLevel + 1}/9</span>`;
@@ -1780,7 +1784,7 @@
                 if (r.bottom >= b.top && r.top <= b.bottom &&
                     r.right  >= b.left && r.left <= b.right) {
                     // 命中：扣分 + combo歸零 + 髮量 +2
-                    score -= 50;
+                    score -= 50; raw = Math.max(0, raw - 50);
                     pillsThisLevel++;
                     if (combo >= 3) popText(basketX - 10, basketY - 40, `連擊 ×${combo} 斷了`, '#e74c3c');
                     resetCombo();
@@ -1818,7 +1822,7 @@
             offset = offset || 0;
             if (!isPlaying) return;
             // 巨型藥盒：故事／出差在分數達到當關目標 50% 後 8%；加班模式 30 秒後 4%
-            const megaReady = endless ? elapsed >= 30 : score >= curLevels()[levelIdx].target * 0.5;
+            const megaReady = endless ? elapsed >= 30 : raw >= curLevels()[levelIdx].target * 0.5;
             if (!megaCooldown && megaReady && Math.random() < (endless ? 0.04 : 0.08)) {
                 spawnMegaPill(); return;
             }
@@ -1965,7 +1969,7 @@
                     r.right >= b.left && r.left <= b.right) {
                     const px = basketX, py = basketY - 22;   // 飄字位置
                     if (type === 'pill') {
-                        score -= 50;
+                        score -= 50; raw = Math.max(0, raw - 50);
                         pillsThisLevel++;
                         if (combo >= 3) popText(px - 10, py - 18, `連擊 ×${combo} 斷了`, '#e74c3c');
                         resetCombo();
@@ -1997,7 +2001,7 @@
                         // 道具不加分、不算連擊、不中斷連擊
 
                     } else if (type === 'junk') {
-                        score += value;
+                        score += value; raw += value;
                         if (combo >= 3) popText(px - 10, py - 18, `連擊 ×${combo} 斷了`, '#e74c3c');
                         resetCombo();   // 小鈔中斷連擊
                         showSplash();
@@ -2010,6 +2014,7 @@
                         const hb  = heightBonus();
                         const gain = Math.round(value * mul * hb);
                         score += gain;
+                        raw += value;      // 門檻只算面額
                         addCombo();
                         const high = hb >= 1.15;
                         popText(px, py, `+$${gain}${high ? ' ↑' : ''}`,
@@ -2025,8 +2030,6 @@
                     }
                     updateScore();
                     item.remove();
-                    // 分數達標就直接過關，不用等時間到（加班模式沒有目標）
-                    if (!endless && score >= lv.target) endLevel();
                     return;
                 }
 
