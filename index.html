@@ -30,6 +30,8 @@
             border-radius: 10px;
             overflow: hidden;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transform-origin: center center;   /* 小螢幕時由 JS 等比縮放 */
+            flex-shrink: 0;
         }
 
         /* 頂端爹地頭像（發小費的人） */
@@ -41,7 +43,6 @@
             height: 130px;
             transition: left 0.1s ease-out, filter 0.25s;
             z-index: 5;
-            transition: left 0.1s ease-out;
             user-select: none;
             background-image: url('assets/boss1.png');
             background-size: contain;
@@ -507,9 +508,8 @@
         let bank      = 0;     // 已過關累積的錢
         let score     = 0;     // 本關分數
         let hairLevel = 0;     // 0~8，整場累積、不隨關卡重置
-        let overdose  = false;
         let timeLeft  = 0;
-        let gameInterval, spawnInterval, bossInterval, splashTimer;
+        let gameInterval, spawnInterval, bossInterval, splashTimer, megaTimer;
         let isPlaying = false;
 
         const containerWidth = 400;
@@ -559,16 +559,29 @@
                                     : hairLevel >= 6 ? '#e67e22' : '#f5b041';
         }
 
+        // ===== 小螢幕等比縮放 =====
+        // 遊戲邏輯全用 400×600 的固定座標，螢幕不夠大時整個容器用 transform 縮小
+        let scale = 1;
+        function fitToScreen() {
+            const pad = 16;   // 邊框 4px×2 加一點留白
+            scale = Math.min(1,
+                (window.innerWidth  - pad) / containerWidth,
+                (window.innerHeight - pad) / 600);
+            container.style.transform = scale < 1 ? `scale(${scale})` : '';
+        }
+        window.addEventListener('resize', fitToScreen);
+        fitToScreen();
+
         // ===== 錢包移動 =====
         container.addEventListener('mousemove', (e) => {
             if (!isPlaying) return;
             const rect = container.getBoundingClientRect();
-            moveBasket(e.clientX - rect.left - basketWidth / 2);
+            moveBasket((e.clientX - rect.left) / scale - basketWidth / 2);
         });
         container.addEventListener('touchmove', (e) => {
             if (!isPlaying) return;
             const rect = container.getBoundingClientRect();
-            moveBasket(e.touches[0].clientX - rect.left - basketWidth / 2);
+            moveBasket((e.touches[0].clientX - rect.left) / scale - basketWidth / 2);
             e.preventDefault();
         }, { passive: false });
 
@@ -600,9 +613,8 @@
             score = 0;                 // 沒過關重玩 → 本關分數歸零
             timeLeft = lv.time;
             isPlaying = true;
-            overdose = false;
             resetCombo();
-            megaCooldown = false;
+            resetMega();
             hideSplash();
             clearItems();
             setHair(hairLevel);        // 髮量沿用，不重置
@@ -634,6 +646,7 @@
             clearInterval(gameInterval);
             clearInterval(spawnInterval);
             clearInterval(bossInterval);
+            resetMega();
             hideSplash();
             clearItems();
         }
@@ -808,6 +821,16 @@
         // ── 巨型藥盒（橫掃式）──
         let megaCooldown = false;   // 同時只允許一顆
 
+        // 解除冷卻並清掉殘留的計時器，避免舊 timeout 跨關把新關的冷卻提早解開
+        function resetMega() {
+            clearTimeout(megaTimer);
+            megaCooldown = false;
+        }
+        function megaCooldownFor(ms) {
+            clearTimeout(megaTimer);
+            megaTimer = setTimeout(() => { megaCooldown = false; }, ms);
+        }
+
         function spawnMegaPill() {
             if (!isPlaying || megaCooldown) return;
             megaCooldown = true;
@@ -826,7 +849,7 @@
                 : 0;
 
             const item = document.createElement('div');
-            item.classList.add('mega-pill');
+            item.classList.add('falling-item', 'mega-pill');   // 帶 falling-item 才會被 clearItems 清掉
             item.style.top  = topPos + 'px';
             item.style.left = megaX + 'px';
             container.appendChild(item);
@@ -851,31 +874,24 @@
                     // 命中：扣分 + combo歸零 + 髮量 +2
                     score -= 50;
                     resetCombo();
-                    const newHair = Math.min(hairLevel + 2, 8);
                     if (hairLevel >= 8) {
                         // 髮量已是 9/9 → 直接過量
-                        overdose = true;
                         updateScore();
                         item.remove();
-                        megaCooldown = false;
                         finish('overdose');
                         return;
                     }
-                    setHair(newHair);
-                    if (newHair >= 8) {
-                        // 剛好升到 9/9，下一顆普通藥盒就死
-                    }
+                    setHair(Math.min(hairLevel + 2, 8));
                     updateScore();
                     item.remove();
-                    // 命中後冷卻 4 秒
-                    setTimeout(() => { megaCooldown = false; }, 4000);
+                    megaCooldownFor(4000);   // 命中後冷卻 4 秒
                     return;
                 }
 
                 // 離開畫面（底部）
                 if (topPos > 620) {
                     item.remove();
-                    setTimeout(() => { megaCooldown = false; }, 1500);
+                    megaCooldownFor(1500);
                     return;
                 }
                 requestAnimationFrame(sweep);
@@ -986,7 +1002,6 @@
                         score -= 50;
                         resetCombo();
                         if (hairLevel >= 8) {
-                            overdose = true;
                             updateScore();
                             item.remove();
                             finish('overdose');
@@ -1028,7 +1043,7 @@
 
         // ===== 按鈕 =====
         function newGame() {
-            levelIdx = 0; bank = 0; score = 0; hairLevel = 0; overdose = false;
+            levelIdx = 0; bank = 0; score = 0; hairLevel = 0;
             showLevelIntro();
         }
         startBtn.addEventListener('click', newGame);
