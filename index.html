@@ -591,6 +591,27 @@
         #sports-screen .pp-item { cursor: pointer; }
         .sp-btn-row { display: flex; gap: 10px; margin-top: 14px; }
         .small-btn.go { background: #e67e22; border-color: #e67e22; color: #fff; font-weight: bold; }
+        /* 換國飛行轉場 */
+        #flight-screen {
+            position: absolute; inset: 0; z-index: 41; display: none;
+            flex-direction: column; align-items: center; justify-content: center;
+            background: radial-gradient(circle at 50% 40%, #10213b, #05070f);
+        }
+        #flight-title { font-size: 16px; font-weight: 900; color: #fff; margin-bottom: 10px;
+            text-shadow: 0 1px 4px #000; text-align: center; }
+        #flight-map { position: relative; width: 100%; height: 200px; overflow: hidden;
+            border-top: 1px solid rgba(255,255,255,0.15); border-bottom: 1px solid rgba(255,255,255,0.15); }
+        #flight-map-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; }
+        #flight-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+        #flight-arc { fill: none; stroke: #ffd54a; stroke-width: 2; stroke-dasharray: 4 4; filter: drop-shadow(0 0 2px #000); }
+        #flight-svg circle { fill: #ff5252; stroke: #fff; stroke-width: 1.5; }
+        #flight-plane { position: absolute; top: 0; left: 0; width: 30px; height: 30px;
+            border-radius: 50%; object-fit: cover; object-position: center;
+            border: 2px solid #ffd54a; background: #fff; will-change: transform;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.6); }
+        .flight-flag { position: absolute; transform: translate(-50%, -140%); font-size: 20px;
+            filter: drop-shadow(0 1px 2px #000); pointer-events: none; }
+        #flight-hint { margin-top: 12px; font-size: 12px; color: #bdc3c7; }
         .pp-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; }
         .pp-item { text-align: center; font-size: 12px; color: #bdc3c7; position: relative; }
         .pp-item img { width: 100%; height: 72px; object-fit: cover; object-position: top; border-radius: 8px; border: 2px solid #444; }
@@ -987,6 +1008,23 @@
             </div>
         </div>
 
+        <!-- 換國飛行轉場 -->
+        <div id="flight-screen">
+            <div id="flight-title"></div>
+            <div id="flight-map">
+                <img id="flight-map-img" src="assets/worldmap.jpg" alt="">
+                <svg id="flight-svg" viewBox="0 0 400 200" preserveAspectRatio="none">
+                    <path id="flight-arc" d=""></path>
+                    <circle id="flight-dot-a" r="3.5"></circle>
+                    <circle id="flight-dot-b" r="3.5"></circle>
+                </svg>
+                <div id="flight-flag-a" class="flight-flag"></div>
+                <div id="flight-flag-b" class="flight-flag"></div>
+                <img id="flight-plane" src="assets/head.jpg" alt="">
+            </div>
+            <div id="flight-hint">點一下跳過 ▸</div>
+        </div>
+
         <div id="bg-dim"></div>
         <!-- 出差：四角國旗 -->
         <div class="corner-flag tl"></div><div class="corner-flag tr"></div>
@@ -1291,6 +1329,19 @@
                   lines: { intro: ['歡迎光臨，發財啦！', '歡迎光臨'], clear: ['嚟啦嚟啦，賭王！', '賭王駕到'], fail: ['開和唔中，唉…', '差一點'] } }
         };
         COUNTRIES.forEach(c => Object.assign(c, COUNTRY_EXTRA[c.id] || {}));
+        // 每國在世界地圖上的經緯度（飛行轉場用；等距圓柱投影）
+        const GEO = {
+            jp: [35.68, 139.69], mx: [19.43, -99.13], in: [19.08, 72.88], sc: [55.95, -3.19],
+            eg: [30.04, 31.24],  br: [-22.91, -43.17], kr: [37.57, 126.98], mn: [47.89, 106.91],
+            ke: [-1.29, 36.82],  cn: [39.90, 116.40], ng: [6.52, 3.38],   pe: [-13.16, -72.54],
+            tr: [41.01, 28.98],  th: [13.76, 100.50], no: [69.65, 18.96], ru: [55.76, 37.62],
+            nz: [-41.29, 174.78], fr: [48.86, 2.35],  ua: [50.45, 30.52], es: [37.39, -5.99],
+            it: [41.90, 12.50],  au: [-33.87, 151.21], ch: [47.37, 8.54], nl: [52.37, 4.90],
+            ca: [51.05, -114.07], gr: [37.98, 23.73], vn: [10.82, 106.63], sa: [24.71, 46.68],
+            is: [64.15, -21.94], jm: [17.97, -76.79], us: [36.17, -115.14], mc: [43.74, 7.42],
+            mo: [22.20, 113.54]
+        };
+        COUNTRIES.forEach(c => { const g = GEO[c.id]; if (g) { c.lat = g[0]; c.lon = g[1]; } });
 
         // ===== 運動會：五個職業運動關卡（獨立串連模式，不進世界出差/護照）=====
         const SPORTS = [
@@ -1381,6 +1432,69 @@
             }
             tripStop++;
         }
+        // ===== 換國飛行轉場（世界出差 / 賭城之旅）=====
+        const FMAP_W = 400, FMAP_H = 200;
+        let flightRaf = null, flightTimer = null;
+        let flightFrom = null, flightTo = null;   // 待播的飛行轉場（按前往下一站才觸發）
+        function flightXY(lv) {
+            return { x: (lv.lon + 180) / 360 * FMAP_W, y: (90 - lv.lat) / 180 * FMAP_H };
+        }
+        function hideFlight() {
+            if (flightRaf) cancelAnimationFrame(flightRaf);
+            clearTimeout(flightTimer);
+            flightRaf = flightTimer = null;
+            const fs = document.getElementById('flight-screen');
+            fs.style.display = 'none'; fs.onclick = null;
+        }
+        // 從 a 國飛到 b 國，動畫跑完（或被點擊跳過）就呼叫 done()
+        function playFlight(a, b, done) {
+            if (!a || !b || a.lat == null || b.lat == null) { done(); return; }
+            const A = flightXY(a), B = flightXY(b);
+            const mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2;
+            const dist = Math.hypot(B.x - A.x, B.y - A.y);
+            const lift = Math.min(75, 22 + dist * 0.28);
+            const d = `M ${A.x.toFixed(1)} ${A.y.toFixed(1)} Q ${mx.toFixed(1)} ${(my - lift).toFixed(1)} ${B.x.toFixed(1)} ${B.y.toFixed(1)}`;
+            const arc = document.getElementById('flight-arc');
+            arc.setAttribute('d', d);
+            const dotA = document.getElementById('flight-dot-a'), dotB = document.getElementById('flight-dot-b');
+            dotA.setAttribute('cx', A.x); dotA.setAttribute('cy', A.y);
+            dotB.setAttribute('cx', B.x); dotB.setAttribute('cy', B.y);
+            const fa = document.getElementById('flight-flag-a'), fb = document.getElementById('flight-flag-b');
+            fa.innerText = a.flag; fa.style.left = (A.x / FMAP_W * 100) + '%'; fa.style.top = (A.y / FMAP_H * 100) + '%';
+            fb.innerText = b.flag; fb.style.left = (B.x / FMAP_W * 100) + '%'; fb.style.top = (B.y / FMAP_H * 100) + '%';
+            document.getElementById('flight-title').innerText = `${a.flag} ${a.country}　✈️　${b.flag} ${b.country}`;
+            const plane = document.getElementById('flight-plane');
+            const fs = document.getElementById('flight-screen');
+            fs.style.display = 'flex';
+            sfx.wave();
+            const len = arc.getTotalLength();
+            arc.style.strokeDasharray = len; arc.style.strokeDashoffset = len;
+            const DUR = 4000, t0 = performance.now();   // 飛行速度減半（時間拉長一倍）
+            let finished = false;
+            const finish = () => {
+                if (finished) return; finished = true;
+                if (flightRaf) cancelAnimationFrame(flightRaf);
+                clearTimeout(flightTimer); flightRaf = flightTimer = null;
+                fs.onclick = null; fs.style.display = 'none';
+                done();
+            };
+            const scaleX = 100 / FMAP_W, scaleY = 100 / FMAP_H;   // viewBox px → %（svg/plane 皆滿版）
+            const step = (now) => {
+                const p = Math.min(1, (now - t0) / DUR);
+                const e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;  // ease-in-out
+                const pt = arc.getPointAtLength(e * len);
+                plane.style.left = (pt.x * scaleX) + '%';
+                plane.style.top = (pt.y * scaleY) + '%';
+                plane.style.transform = 'translate(-50%, -50%)';   // 爹地小頭像維持正向不旋轉
+                arc.style.strokeDashoffset = len * (1 - e);
+                if (p < 1 && !finished) flightRaf = requestAnimationFrame(step);
+                else finish();
+            };
+            flightRaf = requestAnimationFrame(step);
+            fs.onclick = finish;           // 點一下跳過
+            flightTimer = setTimeout(finish, DUR + 400);
+        }
+
         let trip = false;              // 目前是否在出差模式
         let casinoTour = false;        // 賭城之旅：固定三站（拉斯維加斯→摩納哥→澳門）的有限出差
         let sportsDay = false;         // 運動會：固定五站職業運動的有限串連
@@ -2581,7 +2695,7 @@
             clearTimeout(bossTimer);
             resetMega();
             hideSplash();
-            setWind(0); hideConfetti(); hideDark(); hideWhite(); wakeUp(); hideHud();
+            setWind(0); hideConfetti(); hideDark(); hideWhite(); wakeUp(); hideHud(); hideFlight();
             container.classList.remove('windmill-on');
             setCountryFrame(null);
             stopMusic();
@@ -2644,6 +2758,7 @@
                     levelBtn.innerText = '前往下一站';
                     levelBtn.dataset.action = 'intro';
                     levelScreen.style.display = 'flex';
+                    flightFrom = lv; flightTo = nx;   // 按「前往下一站」時才播飛行轉場
                     return;
                 }
                 levelIdx++;
@@ -2680,6 +2795,7 @@
                     levelBtn.innerText = '前往下一站';
                     levelBtn.dataset.action = 'intro';
                     levelScreen.style.display = 'flex';
+                    flightFrom = lv; flightTo = nx;   // 按「前往下一站」時才播飛行轉場
                     return;
                 }
                 levelTitle.innerText = '❌ 爹地收手了';
@@ -3534,8 +3650,13 @@
             playWinVideo(() => { gameOverScreen.style.display = 'flex'; });
         });
         levelBtn.addEventListener('click', () => {
-            if (levelBtn.dataset.action === 'intro') showLevelIntro();
-            else startLevel();
+            if (levelBtn.dataset.action === 'intro') {
+                if (flightFrom && flightTo) {
+                    const a = flightFrom, b = flightTo; flightFrom = flightTo = null;
+                    levelScreen.style.display = 'none';       // 收掉卡片，先看飛行轉場
+                    playFlight(a, b, () => showLevelIntro());  // 飛完（或跳過）才進下一關說明
+                } else showLevelIntro();
+            } else startLevel();
         });
     </script>
 </body>
