@@ -371,6 +371,138 @@
             50%      { filter: drop-shadow(0 0 20px #ff0000) drop-shadow(0 0 40px #ff6600) brightness(1.2); }
         }
         .mega-pill { animation: megaWarn 0.6s ease-in-out infinite; }
+
+        /* ── 接到東西時的飄字 ── */
+        .pop-text {
+            position: absolute;
+            font-weight: 900;
+            font-size: 16px;
+            pointer-events: none;
+            z-index: 28;
+            white-space: nowrap;
+            text-shadow: 0 1px 3px #000, 0 0 6px rgba(0,0,0,0.6);
+            animation: popUp 0.8s ease-out forwards;
+        }
+        @keyframes popUp {
+            0%   { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-44px) scale(1.15); }
+        }
+
+        /* ── 成就提示 ── */
+        #toast {
+            position: absolute;
+            top: 64px; left: 50%;
+            transform: translateX(-50%) translateY(-10px);
+            padding: 6px 14px;
+            background: rgba(0,0,0,0.8);
+            border: 1px solid #f1c40f;
+            border-radius: 16px;
+            color: #f1c40f;
+            font-size: 13px;
+            font-weight: bold;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 32;
+            transition: opacity 0.25s, transform 0.25s;
+        }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        /* ── 角落小按鈕：音效 / 下班 ── */
+        .corner-btn {
+            position: absolute;
+            bottom: 6px;
+            margin: 0;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: normal;
+            background: rgba(0,0,0,0.55);
+            color: #ecf0f1;
+            border-radius: 12px;
+            box-shadow: none;
+            z-index: 16;
+        }
+        .corner-btn:hover { background: rgba(0,0,0,0.85); transform: none; }
+        #mute-btn     { left: 6px; }
+        #clockout-btn { right: 6px; display: none; background: rgba(192,57,43,0.8); }
+
+        /* ── 次要按鈕 ── */
+        .small-btn {
+            padding: 8px 18px;
+            font-size: 14px;
+            margin-top: 10px;
+            background: #34495e;
+            box-shadow: none;
+        }
+        .small-btn:hover { background: #4a6278; }
+        .endless-btn { background: #8e44ad; box-shadow: 0 4px 15px rgba(142,68,173,0.4); }
+        .endless-btn:hover { background: #7d3c98; }
+
+        /* ── 排行榜 ── */
+        .board {
+            margin: 8px 0 0;
+            font-size: 12px;
+            color: #bdc3c7;
+            line-height: 1.5;
+            min-width: 200px;
+        }
+        .board .b-title { color: #f1c40f; font-weight: bold; margin-bottom: 2px; }
+        .board .b-row { display: flex; justify-content: space-between; gap: 12px; }
+        .board .b-row.me { color: #2ecc71; font-weight: bold; }
+        .board .b-empty { color: #7f8c8d; font-style: italic; }
+
+        /* ── 上榜輸入名字 ── */
+        #name-entry {
+            margin-top: 10px;
+            display: none;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+        }
+        #name-entry input {
+            width: 72px;
+            padding: 6px 8px;
+            font-size: 15px;
+            text-align: center;
+            border: 2px solid #f1c40f;
+            border-radius: 8px;
+            background: #1b1b1b;
+            color: #fff;
+            font-family: inherit;
+        }
+        #name-entry button { margin: 0; padding: 6px 12px; font-size: 13px; }
+
+        /* ── 成就畫面 ── */
+        #ach-screen {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.92);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            z-index: 22;
+            padding: 10px 12px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        #ach-screen h2 { margin: 0 0 6px; font-size: 18px; }
+        .ach-list { width: 100%; display: flex; flex-direction: column; gap: 3px; }
+        .ach-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 3px 10px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 8px;
+            text-align: left;
+        }
+        .ach-item.locked { opacity: 0.45; filter: grayscale(1); }
+        .ach-icon { font-size: 22px; width: 28px; text-align: center; }
+        .ach-name { font-size: 13px; font-weight: bold; color: #f1c40f; }
+        .ach-desc { font-size: 11px; color: #bdc3c7; }
+        .ach-item.locked .ach-name { color: #95a5a6; }
+
+        #run-ach { margin-top: 6px; font-size: 22px; letter-spacing: 4px; }
+        .height-hint { color: #5dade2; }
     </style>
 </head>
 <body>
@@ -396,19 +528,36 @@
         <!-- 遊戲碗/錢包 -->
         <div id="basket"></div>
 
+        <!-- 成就提示 -->
+        <div id="toast"></div>
+
+        <!-- 角落按鈕 -->
+        <button id="mute-btn" class="corner-btn">🔊 音效</button>
+        <button id="clockout-btn" class="corner-btn">🏁 下班結算</button>
+
         <!-- 開始畫面 -->
         <div id="start-screen">
             <h2 style="margin:0 0 2px">Who's Your Dad?</h2>
             <p style="margin:0 0 6px;color:#f1c40f;font-size:15px">接住爹地灑下來的小費</p>
-            <p class="instructions">
+            <p class="instructions" style="margin-top:6px">
                 三個關卡，每關都要達到業績目標才能晉級<br>
                 💵 $10 | 💵 $50 | 💵 $100<br>
                 <span style="color:#5dade2">🎮 滑鼠 / 方向鍵 / WASD / 手指　上下左右都能動</span><br>
+                <span class="height-hint">🚀 錢包越高，接到的錢加成越多（最高 ×1.5）</span><br>
                 <span style="color: #ffeb3b; font-weight: bold;">⚠️ 接到「適尿通」扣 50，爹地頭髮 +1</span><br>
-                <span style="color: #e67e22; font-weight: bold;">🔺 髮量整場累積，不會因為過關或重玩而還你</span><br>
                 <span style="color: #e74c3c; font-weight: bold;">☠️ 髮量 9/9 還再吃一盒 → 直接結束</span>
             </p>
-            <button id="start-btn">開始發小費</button>
+            <button id="start-btn" style="margin-top:8px">開始發小費</button>
+            <button id="start-endless-btn" class="small-btn endless-btn" style="display:none">🌙 加班模式（無盡）</button>
+            <button id="ach-btn" class="small-btn">🏆 成就 0/12</button>
+            <div id="start-board" class="board"></div>
+        </div>
+
+        <!-- 成就畫面 -->
+        <div id="ach-screen">
+            <h2>🏆 成就</h2>
+            <div id="ach-list" class="ach-list"></div>
+            <button id="ach-close" class="small-btn">返回</button>
         </div>
 
         <!-- 關卡畫面（開場／過關／失敗共用） -->
@@ -430,9 +579,17 @@
         <!-- 結束畫面 -->
         <div id="game-over-screen">
             <h2>遊戲結束！</h2>
-            <p id="final-score" style="font-size: 24px; color: #f1c40f;"></p>
-            <button id="replay-btn">🎬 看一次爹地的英姿</button>
-            <button id="restart-btn">再挑戰一次</button>
+            <p id="final-score" style="font-size: 24px; color: #f1c40f; margin: 6px 0"></p>
+            <div id="run-ach" title="本場解鎖的成就"></div>
+            <div id="name-entry">
+                <span style="color:#f1c40f">🏅 上榜了！留個名：</span>
+                <input id="name-input" maxlength="4" placeholder="名字">
+                <button id="name-ok">登錄</button>
+            </div>
+            <div id="over-board" class="board"></div>
+            <button id="over-endless-btn" class="small-btn endless-btn" style="display:none">🌙 繼續加班（無盡模式）</button>
+            <button id="replay-btn" class="small-btn">🎬 看一次爹地的英姿</button>
+            <button id="restart-btn" style="margin-top:10px">再挑戰一次</button>
         </div>
     </div>
 
@@ -510,8 +667,194 @@
         let score     = 0;     // 本關分數
         let hairLevel = 0;     // 0~8，整場累積、不隨關卡重置
         let timeLeft  = 0;
-        let gameInterval, spawnInterval, bossInterval, splashTimer, megaTimer;
+        let gameInterval, spawnTimer, bossTimer, splashTimer, megaTimer;
         let isPlaying = false;
+
+        // ===== 加班模式（無盡）=====
+        let endless = false;   // 目前是否在加班模式
+        let elapsed = 0;       // 加班秒數
+
+        // 難度隨秒數爬升，全部以 elapsed 為輸入，每次生成都重新讀
+        function endlessLv() {
+            const t = elapsed;
+            return {
+                name: '加班模式 · 無盡', time: 0, target: Infinity, tip: '',
+                pill:      Math.min(0.22 + t * 0.004, 0.5),
+                spawn:     Math.max(110, 260 - t * 2),
+                bossMove:  Math.max(110, 300 - t * 2.5),
+                speedBase: 3.5 + t * 0.03,
+                speedMul:  1.3,
+                drift:     Math.min(3, t * 0.06),
+                junk:      t >= 20,
+                gold:      0.05,
+                tool:      0.05
+            };
+        }
+        function curLv() { return endless ? endlessLv() : LEVELS[levelIdx]; }
+        function endlessWave() { return Math.floor(elapsed / 15) + 1; }
+
+        // ===== localStorage 小工具 =====
+        function load(k, d) {
+            try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }
+            catch (e) { return d; }
+        }
+        function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+
+        // ===== 音效（Web Audio 合成，不用外部檔案）=====
+        let audioCtx = null;
+        let muted = load('wyd_muted', false);
+        const muteBtn = document.getElementById('mute-btn');
+        function renderMute() { muteBtn.innerText = muted ? '🔇 靜音' : '🔊 音效'; }
+        renderMute();
+        muteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            muted = !muted; save('wyd_muted', muted); renderMute();
+            if (!muted) { ensureAudio(); sfx.bill(50); }
+        });
+        function ensureAudio() {
+            if (!audioCtx) {
+                try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+            }
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        }
+        function tone(freq, dur, type, vol, slideTo, delay) {
+            if (muted || !audioCtx) return;
+            const t0 = audioCtx.currentTime + (delay || 0);
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.type = type || 'square';
+            o.frequency.setValueAtTime(freq, t0);
+            if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t0 + dur);
+            g.gain.setValueAtTime(vol || 0.15, t0);
+            g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+            o.connect(g).connect(audioCtx.destination);
+            o.start(t0); o.stop(t0 + dur + 0.02);
+        }
+        const sfx = {
+            bill(v)  { tone(v >= 100 ? 880 : v >= 50 ? 660 : 520, 0.08, 'square', 0.12); },
+            combo(n) { const b = Math.min(n, 15) * 30;
+                       tone(440 + b, 0.06, 'triangle', 0.12);
+                       tone(660 + b, 0.08, 'triangle', 0.12, null, 0.06); },
+            gold()   { [660, 880, 1320].forEach((f, i) => tone(f, 0.1, 'triangle', 0.15, null, i * 0.07)); },
+            pill()   { tone(200, 0.25, 'sawtooth', 0.18, 80); },
+            mega()   { tone(120, 0.5, 'sawtooth', 0.22, 50); },
+            tool()   { tone(1200, 0.05, 'square', 0.1); tone(1500, 0.05, 'square', 0.1, null, 0.05); },
+            junk()   { tone(300, 0.12, 'square', 0.08, 200); },
+            clear()  { [523, 659, 784, 1046].forEach((f, i) => tone(f, 0.15, 'triangle', 0.15, null, i * 0.12)); },
+            fail()   { [400, 300, 200].forEach((f, i) => tone(f, 0.2, 'sawtooth', 0.15, null, i * 0.15)); },
+            ach()    { [784, 1046, 1568].forEach((f, i) => tone(f, 0.12, 'sine', 0.15, null, i * 0.08)); },
+            warn()   { tone(880, 0.1, 'square', 0.1); tone(880, 0.1, 'square', 0.1, null, 0.15); },
+            wave()   { [523, 784].forEach((f, i) => tone(f, 0.1, 'triangle', 0.12, null, i * 0.1)); }
+        };
+
+        // ===== 飄字與提示 =====
+        function popText(x, y, text, color) {
+            const el = document.createElement('div');
+            el.className = 'pop-text';
+            el.innerText = text;
+            el.style.left = Math.max(4, Math.min(containerWidth - 90, x)) + 'px';
+            el.style.top  = y + 'px';
+            el.style.color = color || '#fff';
+            container.appendChild(el);
+            setTimeout(() => el.remove(), 800);
+        }
+        const toastEl = document.getElementById('toast');
+        let toastTimer;
+        function toast(msg) {
+            toastEl.innerText = msg;
+            toastEl.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2000);
+        }
+
+        // ===== 成就 =====
+        const ACH = [
+            { id: 'clear',   icon: '🎉', name: '三關全過',   desc: '完成故事模式' },
+            { id: 'clean',   icon: '🧼', name: '滴藥不沾',   desc: '一關內沒吃任何藥盒並過關' },
+            { id: 'combo10', icon: '🔥', name: '連擊 ×10',   desc: '單次連擊達到 10' },
+            { id: 'combo20', icon: '☄️', name: '連擊 ×20',   desc: '單次連擊達到 20' },
+            { id: 'hairy',   icon: '💇', name: '秀髮如雲',   desc: '髮量 3/9 以下過三關' },
+            { id: 'bald',    icon: '🥚', name: '以髮換錢',   desc: '髮量 9/9 還是把三關過了' },
+            { id: 'gold5',   icon: '💰', name: '金主',       desc: '一場接到 5 張金鈔' },
+            { id: 'dodge5',  icon: '🕺', name: '閃避大師',   desc: '一場躲過 5 顆巨型藥盒' },
+            { id: 'high100', icon: '🚀', name: '高空作業',   desc: '在最高處接到 $100 以上的鈔票' },
+            { id: 'ot60',    icon: '🌙', name: '加班一小時', desc: '加班模式撐過 60 秒' },
+            { id: 'ot120',   icon: '🧟', name: '爆肝',       desc: '加班模式撐過 120 秒' },
+            { id: 'rich',    icon: '🏦', name: '萬元戶',     desc: '單場總小費超過 $10000' }
+        ];
+        let achUnlocked = load('wyd_ach', {});
+        let runAch = [];              // 本場新解鎖的成就
+        let pillsThisLevel = 0;       // 本關吃到的藥盒數（含巨型）
+        let goldThisRun = 0;
+        let dodgesThisRun = 0;
+
+        function achCount() { return ACH.filter(a => achUnlocked[a.id]).length; }
+        function unlock(id) {
+            if (achUnlocked[id]) return;
+            const a = ACH.find(x => x.id === id); if (!a) return;
+            achUnlocked[id] = true;
+            save('wyd_ach', achUnlocked);
+            runAch.push(a);
+            toast(`🏆 成就解鎖：${a.icon} ${a.name}`);
+            sfx.ach();
+            renderAchBtn();
+        }
+        const achBtn = document.getElementById('ach-btn');
+        function renderAchBtn() { achBtn.innerText = `🏆 成就 ${achCount()}/${ACH.length}`; }
+        function renderAchList() {
+            document.getElementById('ach-list').innerHTML = ACH.map(a => `
+                <div class="ach-item ${achUnlocked[a.id] ? '' : 'locked'}">
+                    <div class="ach-icon">${achUnlocked[a.id] ? a.icon : '🔒'}</div>
+                    <div><div class="ach-name">${a.name}</div><div class="ach-desc">${a.desc}</div></div>
+                </div>`).join('');
+        }
+        renderAchBtn();
+        achBtn.addEventListener('click', () => {
+            renderAchList();
+            document.getElementById('ach-screen').style.display = 'flex';
+        });
+        document.getElementById('ach-close').addEventListener('click', () => {
+            document.getElementById('ach-screen').style.display = 'none';
+        });
+
+        // ===== 排行榜（本機，前五名，故事 / 加班各一張）=====
+        function getBoard(mode) { return load('wyd_board_' + mode, []); }
+        function qualifies(mode, total) {
+            const b = getBoard(mode);
+            return total > 0 && (b.length < 5 || total > b[b.length - 1].score);
+        }
+        function addScore(mode, entry) {
+            const b = getBoard(mode);
+            b.push(entry);
+            b.sort((x, y) => y.score - x.score);
+            b.length = Math.min(b.length, 5);
+            save('wyd_board_' + mode, b);
+            return b.indexOf(entry);
+        }
+        function renderBoard(el, mode, highlightIdx) {
+            const b = getBoard(mode);
+            const title = mode === 'endless' ? '🌙 加班排行' : '🏆 故事排行';
+            let html = `<div class="b-title">${title}</div>`;
+            if (!b.length) html += `<div class="b-empty">還沒有人上榜</div>`;
+            b.forEach((r, i) => {
+                const extra = mode === 'endless' ? `${r.sec}s` : `髮 ${r.hair}/9`;
+                html += `<div class="b-row ${i === highlightIdx ? 'me' : ''}">` +
+                        `<span>${i + 1}. ${r.name}</span><span>${fmtMoney(r.score)}</span><span>${extra}</span></div>`;
+            });
+            el.innerHTML = html;
+        }
+        const startBoard = document.getElementById('start-board');
+        const overBoard  = document.getElementById('over-board');
+        renderBoard(startBoard, 'story', -1);
+
+        // 加班模式解鎖狀態
+        const startEndlessBtn = document.getElementById('start-endless-btn');
+        const overEndlessBtn  = document.getElementById('over-endless-btn');
+        const clockoutBtn     = document.getElementById('clockout-btn');
+        function renderEndlessUnlock() {
+            startEndlessBtn.style.display = load('wyd_endless', false) ? 'block' : 'none';
+        }
+        renderEndlessUnlock();
 
         const containerWidth = 400;
         const basketWidth = 70;
@@ -523,7 +866,9 @@
 
         function addCombo() {
             combo += 1;
-            if (combo >= 2) showComboFlash();
+            if (combo >= 2) { showComboFlash(); sfx.combo(combo); }
+            if (combo >= 10) unlock('combo10');
+            if (combo >= 20) unlock('combo20');
         }
 
         function showComboFlash() {
@@ -547,10 +892,21 @@
                 function fmtMoney(v) { return (v < 0 ? '-$' : '$') + Math.abs(v); }
 
         function updateScore() {
+            if (endless) {
+                scoreDisplay.innerText = fmtMoney(score);
+                scoreDisplay.style.color = score < 0 ? '#e74c3c' : '#f1c40f';
+                return;
+            }
             const lv = LEVELS[levelIdx];
             scoreDisplay.innerText = `${fmtMoney(score)} / $${lv.target}`;
             scoreDisplay.style.color = score < 0 ? '#e74c3c'
                                      : score >= lv.target ? '#2ecc71' : '';
+        }
+
+        // 高空加成：錢包在最低點 ×1.0，最高點 ×1.5，線性
+        function heightBonus() {
+            const f = (BASKET_MAX_Y - basketY) / (BASKET_MAX_Y - BASKET_MIN_Y);
+            return 1 + 0.5 * Math.max(0, Math.min(1, f));
         }
 
         function setHair(level) {
@@ -674,8 +1030,10 @@
         function startLevel() {
             if (isPlaying) return;     // 防止重複點擊疊加計時器
             stopLevel();               // 收掉任何殘留的 interval 與掉落物
-            const lv = LEVELS[levelIdx];
+            ensureAudio();
+            const lv = curLv();
             score = 0;                 // 沒過關重玩 → 本關分數歸零
+            pillsThisLevel = 0;
             timeLeft = lv.time;
             isPlaying = true;
             resetCombo();
@@ -685,36 +1043,68 @@
             clearItems();
             setHair(hairLevel);        // 髮量沿用，不重置
             updateScore();
-            const shortName = lv.name.split('·').pop().trim();
-            levelDisplay.innerHTML =
-                `第 ${levelIdx + 1} 關<br><span class="lv-name">${shortName}</span>`;
-            timeDisplay.innerText = `${timeLeft}s`;
+            if (endless) {
+                elapsed = 0;
+                levelDisplay.innerHTML = `加班中<br><span class="lv-name">第 1 波</span>`;
+                timeDisplay.innerText = '0s';
+                timeDisplay.style.color = '#8e44ad';
+                clockoutBtn.style.display = 'block';
+            } else {
+                const shortName = lv.name.split('·').pop().trim();
+                levelDisplay.innerHTML =
+                    `第 ${levelIdx + 1} 關<br><span class="lv-name">${shortName}</span>`;
+                timeDisplay.innerText = `${timeLeft}s`;
+                timeDisplay.style.color = '';
+                clockoutBtn.style.display = 'none';
+            }
             levelScreen.style.display = 'none';
             gameOverScreen.style.display = 'none';
 
             gameInterval = setInterval(() => {
+                if (endless) {
+                    elapsed++;
+                    timeDisplay.innerText = `${elapsed}s`;
+                    if (elapsed % 15 === 0) {
+                        levelDisplay.innerHTML = `加班中<br><span class="lv-name">第 ${endlessWave()} 波</span>`;
+                        popText(150, 300, `第 ${endlessWave()} 波！`, '#8e44ad');
+                        sfx.wave();
+                    }
+                    if (elapsed >= 60)  unlock('ot60');
+                    if (elapsed >= 120) unlock('ot120');
+                    return;
+                }
                 timeLeft--;
                 timeDisplay.innerText = `${timeLeft}s`;
                 timeDisplay.style.color = timeLeft <= 5 ? '#e74c3c' : '';
+                if (timeLeft === 5) sfx.warn();
                 if (timeLeft <= 0) endLevel();
             }, 1000);
 
-            bossInterval = setInterval(() => {
-                if (!isPlaying) return;
-                boss.style.left = Math.random() * (containerWidth - bossWidth) + 'px';
-            }, lv.bossMove);
+            // 爹地移動與掉落物生成都用鏈式 setTimeout，每次重新讀 curLv()，加班模式才能逐步加速
+            scheduleBoss();
+            scheduleSpawn();
+        }
 
-            spawnInterval = setInterval(spawnItem, lv.spawn);
+        function scheduleBoss() {
+            if (!isPlaying) return;
+            boss.style.left = Math.random() * (containerWidth - bossWidth) + 'px';
+            bossTimer = setTimeout(scheduleBoss, curLv().bossMove);
+        }
+        function scheduleSpawn() {
+            if (!isPlaying) return;
+            spawnItem();
+            spawnTimer = setTimeout(scheduleSpawn, curLv().spawn);
         }
 
         function stopLevel() {
             isPlaying = false;
             clearInterval(gameInterval);
-            clearInterval(spawnInterval);
-            clearInterval(bossInterval);
+            clearTimeout(spawnTimer);
+            clearTimeout(bossTimer);
             resetMega();
             hideSplash();
             clearItems();
+            clockoutBtn.style.display = 'none';
         }
 
         function clearItems() {
@@ -727,7 +1117,19 @@
             const lv = LEVELS[levelIdx];
             if (score >= lv.target) {
                 bank += score;
-                if (levelIdx === WIN_AFTER_LEVEL) { playWinVideo(); return; }
+                sfx.clear();
+                if (pillsThisLevel === 0) unlock('clean');
+                if (levelIdx === WIN_AFTER_LEVEL) {
+                    // 三關全過：解鎖加班模式與相關成就，再播影片
+                    save('wyd_endless', true);
+                    renderEndlessUnlock();
+                    unlock('clear');
+                    if (hairLevel <= 2) unlock('hairy');
+                    if (hairLevel >= 8) unlock('bald');
+                    if (bank >= 10000) unlock('rich');
+                    playWinVideo();
+                    return;
+                }
                 levelIdx++;
                 levelTitle.innerText = '✅ 過關！';
                 levelBody.innerHTML =
@@ -738,6 +1140,7 @@
                 levelBtn.innerText = '繼續';
                 levelScreen.style.display = 'flex';
             } else {
+                sfx.fail();
                 levelTitle.innerText = '❌ 爹地收手了';
                 levelBody.innerHTML =
                     `只收到 <span style="color:#e74c3c">${fmtMoney(score)}</span>，` +
@@ -749,17 +1152,38 @@
             }
         }
 
-        // 整場結束
+        // 整場結束：reason = 'clear'（三關全過）| 'overdose'（藥盒過量）| 'clockout'（加班主動下班）
+        let pendingEntry = null;   // 等待輸入名字的排行榜資料
+        const nameEntry = document.getElementById('name-entry');
+        const nameInput = document.getElementById('name-input');
+
         function finish(reason) {
             stopLevel();
             const h2 = gameOverScreen.querySelector('h2');
             const total = bank + (reason === 'clear' ? 0 : score);
-            if (reason === 'overdose') {
+            const mode = endless ? 'endless' : 'story';
+            if (total >= 10000) unlock('rich');
+
+            if (endless) {
+                h2.innerText = reason === 'overdose' ? '☠️ 加班到倒下' : '🏁 準時下班';
+                const wave = endlessWave();
+                const verdict = elapsed < 30  ? '這樣也算加班？'
+                              : elapsed < 60  ? '有加到，但老闆沒看到'
+                              : elapsed < 120 ? '爹地開始記得你的名字了'
+                              : '爹地把公司股票分你一張';
+                finalScore.innerHTML =
+                    `撐了 <span style="color:#8e44ad">${elapsed} 秒</span>　第 ${wave} 波<br>` +
+                    `加班費 <span style="color:#f1c40f">${fmtMoney(total)}</span>　髮量 ${hairLevel + 1}/9<br>` +
+                    `<span style="font-size:15px;color:#bdc3c7">${verdict}</span>`;
+                finalScore.style.color = '#f1c40f';
+                if (reason === 'overdose') sfx.fail(); else sfx.clear();
+            } else if (reason === 'overdose') {
                 h2.innerText = '☠️ 適尿通過量！';
                 finalScore.innerHTML =
                     `髮量爆表到 9/9 還硬吃一盒<br>` +
                     `倒在第 ${levelIdx + 1} 關，結算 ${fmtMoney(total)}`;
                 finalScore.style.color = '#e74c3c';
+                sfx.fail();
             } else {
                 const rank = hairLevel <= 2 ? '精算師 —— 錢賺了，頭髮也顧住了'
                            : hairLevel <= 5 ? '普通上班族 —— 有得有失'
@@ -772,9 +1196,47 @@
                     `<span style="font-size:17px;color:#bdc3c7">${rank}</span>`;
                 finalScore.style.color = '#f1c40f';
             }
-            replayBtn.style.display = (reason === 'clear') ? 'block' : 'none';
+
+            // 本場解鎖的成就
+            const runAchEl = document.getElementById('run-ach');
+            runAchEl.innerText = runAch.length ? runAch.map(a => a.icon).join('') : '';
+            runAchEl.title = runAch.map(a => a.name).join('、');
+
+            // 排行榜：上榜就請玩家留名，否則直接顯示
+            pendingEntry = null;
+            if (qualifies(mode, total)) {
+                pendingEntry = { mode, entry: { name: '', score: total, hair: hairLevel + 1, sec: elapsed } };
+                nameInput.value = load('wyd_name', '');
+                nameEntry.style.display = 'flex';
+                overBoard.innerHTML = '';
+                setTimeout(() => nameInput.focus(), 50);
+            } else {
+                nameEntry.style.display = 'none';
+                renderBoard(overBoard, mode, -1);
+            }
+
+            replayBtn.style.display      = (!endless && reason === 'clear') ? 'block' : 'none';
+            overEndlessBtn.style.display = (!endless && reason === 'clear') ? 'block' : 'none';
             gameOverScreen.style.display = 'flex';
         }
+
+        function submitName() {
+            if (!pendingEntry) return;
+            const name = (nameInput.value.trim() || '路人').slice(0, 4);
+            save('wyd_name', name);
+            pendingEntry.entry.name = name;
+            const idx = addScore(pendingEntry.mode, pendingEntry.entry);
+            renderBoard(overBoard, pendingEntry.mode, idx);
+            renderBoard(startBoard, 'story', -1);
+            nameEntry.style.display = 'none';
+            pendingEntry = null;
+            sfx.gold();
+        }
+        document.getElementById('name-ok').addEventListener('click', submitName);
+        nameInput.addEventListener('keydown', (e) => {
+            e.stopPropagation();          // 別讓 WASD 被當成移動鍵
+            if (e.key === 'Enter') submitName();
+        });
 
         // ===== 三關全過的慶祝影片 =====
         const winPlayBtn = document.getElementById('win-play');
@@ -901,8 +1363,9 @@
             if (!isPlaying || megaCooldown) return;
             megaCooldown = true;
 
-            const lv     = LEVELS[levelIdx];
+            const lv     = curLv();
             const pw     = 200;                    // 藥盒寬度（容器 1/2）
+            sfx.mega();
             // 隨機水平位置：左邊最多從 0 開始，右邊最多讓右緣貼齊容器
             const startX = Math.random() * (containerWidth - pw);
             let topPos   = 120;  // 從爹地正下方開始往下掉
@@ -939,7 +1402,10 @@
                     r.right  >= b.left && r.left <= b.right) {
                     // 命中：扣分 + combo歸零 + 髮量 +2
                     score -= 50;
+                    pillsThisLevel++;
+                    if (combo >= 3) popText(basketX - 10, basketY - 40, `連擊 ×${combo} 斷了`, '#e74c3c');
                     resetCombo();
+                    sfx.pill();
                     if (hairLevel >= 8) {
                         // 髮量已是 9/9 → 直接過量
                         updateScore();
@@ -948,15 +1414,18 @@
                         return;
                     }
                     setHair(Math.min(hairLevel + 2, 8));
+                    popText(basketX, basketY - 20, '-$50  髮量+2', '#e74c3c');
                     updateScore();
                     item.remove();
                     megaCooldownFor(4000);   // 命中後冷卻 4 秒
                     return;
                 }
 
-                // 離開畫面（底部）
+                // 離開畫面（底部）：算躲過一顆
                 if (topPos > 620) {
                     item.remove();
+                    dodgesThisRun++;
+                    if (dodgesThisRun >= 5) unlock('dodge5');
                     megaCooldownFor(1500);
                     return;
                 }
@@ -967,13 +1436,13 @@
 
         function spawnItem() {
             if (!isPlaying) return;
-            // 巨型藥盒：分數達到當關目標 50% 後，每次生成有 8% 機率橫掃
-            if (!megaCooldown && score >= LEVELS[levelIdx].target * 0.5
-                && Math.random() < 0.08) {
+            // 巨型藥盒：故事模式在分數達到當關目標 50% 後 8%；加班模式 15 秒後 6%
+            const megaReady = endless ? elapsed >= 15 : score >= LEVELS[levelIdx].target * 0.5;
+            if (!megaCooldown && megaReady && Math.random() < (endless ? 0.06 : 0.08)) {
                 spawnMegaPill(); return;
             }
 
-            const lv = LEVELS[levelIdx];
+            const lv = curLv();
             const item = document.createElement('div');
             item.classList.add('falling-item');
 
@@ -1064,9 +1533,13 @@
                 const r = item.getBoundingClientRect();
                 if (r.bottom >= b.top && r.top <= b.bottom &&
                     r.right >= b.left && r.left <= b.right) {
+                    const px = basketX, py = basketY - 22;   // 飄字位置
                     if (type === 'pill') {
                         score -= 50;
+                        pillsThisLevel++;
+                        if (combo >= 3) popText(px - 10, py - 18, `連擊 ×${combo} 斷了`, '#e74c3c');
                         resetCombo();
+                        sfx.pill();
                         if (hairLevel >= 8) {
                             updateScore();
                             item.remove();
@@ -1074,46 +1547,97 @@
                             return;
                         }
                         setHair(hairLevel + 1);
+                        popText(px, py, '-$50', '#e74c3c');
 
                     } else if (type === 'tool') {
                         // 剪刀 / 刮鬍刀：髮量 -1（最低 0）
-                        if (hairLevel > 0) setHair(hairLevel - 1);
+                        if (hairLevel > 0) { setHair(hairLevel - 1); popText(px, py, '髮量 -1', '#5dade2'); }
+                        else popText(px, py, '已經很茂密了', '#95a5a6');
+                        sfx.tool();
                         // 道具不加分、不算連擊、不中斷連擊
-
-                    } else if (type === 'gold') {
-                        const mul = comboMultiplier();
-                        score += value * mul;
-                        addCombo();
 
                     } else if (type === 'junk') {
                         score += value;
+                        if (combo >= 3) popText(px - 10, py - 18, `連擊 ×${combo} 斷了`, '#e74c3c');
                         resetCombo();   // 小鈔中斷連擊
                         showSplash();
+                        sfx.junk();
+                        popText(px, py, `+$${value}`, '#95a5a6');
 
                     } else {
-                        // 一般鈔票
+                        // 一般鈔票與金鈔：連擊倍率 × 高空加成
                         const mul = comboMultiplier();
-                        score += value * mul;
+                        const hb  = heightBonus();
+                        const gain = Math.round(value * mul * hb);
+                        score += gain;
                         addCombo();
+                        const high = hb >= 1.15;
+                        popText(px, py, `+$${gain}${high ? ' ↑' : ''}`,
+                                type === 'gold' ? '#ffd700' : high ? '#5dade2' : '#2ecc71');
+                        if (type === 'gold') {
+                            sfx.gold();
+                            goldThisRun++;
+                            if (goldThisRun >= 5) unlock('gold5');
+                        } else {
+                            sfx.bill(value);
+                        }
+                        if (value >= 100 && basketY <= BASKET_MIN_Y + 10) unlock('high100');
                     }
                     updateScore();
                     item.remove();
                     return;
                 }
 
-                if (topPos > 600) { if (type !== 'pill' && type !== 'tool') resetCombo(); item.remove(); }
+                if (topPos > 600) {
+                    if (type !== 'pill' && type !== 'tool') {
+                        if (combo >= 3) popText(x, 560, `連擊 ×${combo} 斷了`, '#e74c3c');
+                        resetCombo();
+                    }
+                    item.remove();
+                }
                 else requestAnimationFrame(fall);
             }
             requestAnimationFrame(fall);
         }
 
         // ===== 按鈕 =====
+        function resetRun() {
+            levelIdx = 0; bank = 0; score = 0; hairLevel = 0; elapsed = 0;
+            runAch = []; goldThisRun = 0; dodgesThisRun = 0; pillsThisLevel = 0;
+        }
         function newGame() {
-            levelIdx = 0; bank = 0; score = 0; hairLevel = 0;
+            ensureAudio();
+            endless = false;
+            resetRun();
             showLevelIntro();
+        }
+        // 從開始畫面進加班：全新一場，髮量 0
+        function newEndless() {
+            ensureAudio();
+            endless = true;
+            resetRun();
+            startScreen.style.display = 'none';
+            startLevel();
+        }
+        // 三關全過後繼續加班：髮量沿用，加班費另計
+        function continueEndless() {
+            ensureAudio();
+            endless = true;
+            bank = 0; score = 0; elapsed = 0;
+            gameOverScreen.style.display = 'none';
+            startLevel();
         }
         startBtn.addEventListener('click', newGame);
         restartBtn.addEventListener('click', newGame);
+        startEndlessBtn.addEventListener('click', newEndless);
+        overEndlessBtn.addEventListener('click', continueEndless);
+        clockoutBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (endless && isPlaying) finish('clockout');
+        });
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && endless && isPlaying) finish('clockout');
+        });
         replayBtn.addEventListener('click', () => {
             gameOverScreen.style.display = 'none';
             playWinVideo(() => { gameOverScreen.style.display = 'flex'; });
