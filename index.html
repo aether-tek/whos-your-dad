@@ -889,9 +889,9 @@
             <h2>🛂 爹地的護照</h2>
             <div id="pp-grid" class="pp-grid"></div>
             <button id="passport-close" class="small-btn">返回</button>
-            <!-- 點某國跳出的玩法說明 -->
-            <div id="pp-detail"><div class="ppd-card" id="ppd-card"></div></div>
         </div>
+        <!-- 點某國跳出的玩法說明（放在遊戲區層級，永遠置中、不隨護照捲動） -->
+        <div id="pp-detail"><div class="ppd-card" id="ppd-card"></div></div>
 
         <div id="bg-dim"></div>
         <!-- 出差：四角國旗 -->
@@ -1669,8 +1669,9 @@
             const c = COUNTRIES.find(x => x.id === item.dataset.id);
             if (c) showCountryDetail(c);
         });
-        document.getElementById('pp-detail').addEventListener('click', () => {
-            document.getElementById('pp-detail').style.display = 'none';
+        document.getElementById('pp-detail').addEventListener('click', (e) => {
+            // 點卡片以外的背景就關掉
+            if (e.target.id === 'pp-detail') document.getElementById('pp-detail').style.display = 'none';
         });
         document.getElementById('passport-close').addEventListener('click', () => {
             document.getElementById('passport-screen').style.display = 'none';
