@@ -650,6 +650,31 @@
             text-align: center; font-size: 18px; font-weight: 900;
             color: #aee3ff; text-shadow: 0 0 8px #4fc3f7;
         }
+        /* 加拿大暴風雪 / 冰島永晝：白幕（錢包 z10 仍看得到） */
+        #white {
+            position: absolute; inset: 0;
+            background: rgba(255,255,255,0.85);
+            opacity: 0; pointer-events: none; z-index: 9;
+            transition: opacity 0.25s;
+        }
+        #white::after {
+            content: '❄️ 白茫茫';
+            position: absolute; top: 20%; left: 0; right: 0;
+            text-align: center; font-size: 18px; font-weight: 900;
+            color: #4a6fa5; text-shadow: 0 0 6px #fff;
+        }
+        #white.sun { background: rgba(255,250,220,0.9); }
+        #white.sun::after { content: '☀️ 永晝刺眼'; color: #b8860b; }
+        /* 荷蘭：旋轉大風車 */
+        #windmill {
+            position: absolute; top: 150px; left: 50%;
+            transform: translateX(-50%);
+            font-size: 60px; opacity: 0; z-index: 6;
+            pointer-events: none;
+            animation: spin 2.4s linear infinite;
+        }
+        @keyframes spin { from { transform: translateX(-50%) rotate(0); } to { transform: translateX(-50%) rotate(360deg); } }
+        #game-container.windmill-on #windmill { opacity: 0.5; }
         /* 紐西蘭：地震 */
         @keyframes shake {
             0%,100% { transform: translate(0,0); }
@@ -877,6 +902,8 @@
         <div id="wind-ind"></div>
         <div id="confetti"></div>
         <div id="dark"></div>
+        <div id="white"></div>
+        <div id="windmill">🌀</div>
 
         <!-- 成就畫面 -->
         <div id="ach-screen">
@@ -1041,7 +1068,47 @@
             { id: 'es', flag: '🇪🇸', country: '西班牙', name: '塞維亞 · 午睡時間',  img: 'assets/country-spain.jpg',    currency: '€',
               time: 30, target: 900,  pill: 0.26, spawn: 280, bossMove: 260, speedBase: 2.9, drift: 0.8, speedMul: 0.9,
               junk: false, gold: 0.05, tool: 0.05, mech: 'siesta', accent: '#c60b1e',
-              tip: '所有掉落物會隨時停在半空睡 1.2 秒，醒來一起掉下來', tip2: '午睡醒來後接到的第一張鈔票 ×3' }
+              tip: '所有掉落物會隨時停在半空睡 1.2 秒，醒來一起掉下來', tip2: '午睡醒來後接到的第一張鈔票 ×3' },
+            { id: 'it', flag: '🇮🇹', country: '義大利', name: '羅馬 · 旋轉披薩', img: 'assets/country-it.jpg', currency: '€',
+              time: 30, target: 1000, pill: 0.27, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 0, speedMul: 0.9,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'pizza', accent: '#009246',
+              tip: '所有鈔票像披薩一樣邊轉邊繞小圈落下，落點會飄', tip2: '轉滿一圈接到的鈔票 ×2' },
+            { id: 'au', flag: '🇦🇺', country: '澳洲', name: '雪梨 · 迴力鏢', img: 'assets/country-au.jpg', currency: 'A$',
+              time: 30, target: 1000, pill: 0.27, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 0.8, speedMul: 0.9,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'boomerang', accent: '#00843d',
+              tip: '漏接的鈔票會像迴力鏢彈回頂端再掉一次', tip2: '接到彈回來的鈔票 ×2' },
+            { id: 'ch', flag: '🇨🇭', country: '瑞士', name: '蘇黎世 · 精密鐘錶', img: 'assets/country-ch.jpg', currency: 'CHF',
+              time: 30, target: 1300, pill: 0.24, spawn: 250, bossMove: 300, speedBase: 3.0, drift: 0, speedMul: 1.0,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'clockwork', accent: '#d52b1e',
+              tip: '全部等速、垂直、等間距落下，像節拍器，門檻很高', tip2: '連續接 5 張不漏，爹地送一張金鈔' },
+            { id: 'nl', flag: '🇳🇱', country: '荷蘭', name: '阿姆斯特丹 · 大風車', img: 'assets/country-nl.jpg', currency: '€',
+              time: 30, target: 1000, pill: 0.27, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 0, speedMul: 0.9,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'windmill', accent: '#ff6600',
+              tip: '大風車把所有東西大幅度左右吹，擺盪很誇張', tip2: '在畫面邊緣接到的鈔票 ×2' },
+            { id: 'ca', flag: '🇨🇦', country: '加拿大', name: '洛磯山 · 暴風雪', img: 'assets/country-ca.jpg', currency: 'C$',
+              time: 30, target: 1000, pill: 0.27, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 0.8, speedMul: 0.9,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'blizzard', accent: '#ff0000',
+              tip: '暴風雪一陣一陣，畫面白茫茫看不清', tip2: '接到 🍁 楓糖漿會清出一段視野' },
+            { id: 'gr', flag: '🇬🇷', country: '希臘', name: '雅典 · 摔盤子', img: 'assets/country-gr.jpg', currency: '€',
+              time: 30, target: 1000, pill: 0.27, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 0.8, speedMul: 0.9,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'platesmash', accent: '#0d5eaf',
+              tip: '接到鈔票會摔盤子助興，越接越嗨', tip2: '每 5 連擊摔一疊盤子，爹地補一張金鈔' },
+            { id: 'vn', flag: '🇻🇳', country: '越南', name: '胡志明市 · 機車瀑布', img: 'assets/country-vn.jpg', currency: '₫',
+              time: 30, target: 1000, pill: 0.24, spawn: 170, bossMove: 200, speedBase: 2.8, drift: 0.8, speedMul: 0.9,
+              junk: true, gold: 0.05, tool: 0.05, mech: 'scooter', accent: '#da251d',
+              tip: '鈔票像滿街機車一樣狂掉，數量爆多但面額都很小', tip2: '連擊每滿 8，爹地補一張大鈔' },
+            { id: 'sa', flag: '🇸🇦', country: '沙烏地', name: '利雅德 · 石油噴發', img: 'assets/country-sa.jpg', currency: '﷼',
+              time: 30, target: 1200, pill: 0.27, spawn: 300, bossMove: 260, speedBase: 2.8, drift: 0.8, speedMul: 0.9,
+              junk: false, gold: 0.06, tool: 0.05, mech: 'oilgush', accent: '#006c35',
+              tip: '每隔幾秒地下噴出一柱金鈔，把握油井噴發', tip2: '油井噴發時所有金鈔 ×2' },
+            { id: 'is', flag: '🇮🇸', country: '冰島', name: '雷克雅維克 · 永晝', img: 'assets/country-is.jpg', currency: 'kr',
+              time: 30, target: 1000, pill: 0.27, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 0.8, speedMul: 0.9,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'whiteout', accent: '#02529c',
+              tip: '永晝太亮，畫面白到只剩剪影，靠形狀認東西', tip2: '看不清也照接，白光中接到的 ×1.5' },
+            { id: 'jm', flag: '🇯🇲', country: '牙買加', name: '金斯敦 · 雷鬼慢活', img: 'assets/country-jm.jpg', currency: 'J$',
+              time: 30, target: 900, pill: 0.26, spawn: 300, bossMove: 280, speedBase: 2.4, drift: 0.6, speedMul: 0.7,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'reggae', accent: '#009b3a',
+              tip: '雷鬼節奏，全場慢動作、輕輕搖擺，超放鬆', tip2: '慢歸慢，連擊不會因為漏接而斷（限這關）' }
         ];
         // 每國補充資料：語言代碼、三句當地話（原文, 中文）、特產（emoji, 名稱）
         const COUNTRY_EXTRA = {
@@ -1084,7 +1151,27 @@
             ua: { lang: 'uk-UA', souvenir: ['🌻', '向日葵'],
                   lines: { intro: ['Ласкаво просимо!', '歡迎'], clear: ['Чудово!', '太棒了'], fail: ['Ой, шкода…', '唉，可惜'] } },
             es: { lang: 'es-ES', souvenir: ['💃', '佛朗明哥'],
-                  lines: { intro: ['¡Bienvenido!', '歡迎'], clear: ['¡Olé! ¡Muy bien!', '好極了'], fail: ['¡Vaya…!', '哎呀'] } }
+                  lines: { intro: ['¡Bienvenido!', '歡迎'], clear: ['¡Olé! ¡Muy bien!', '好極了'], fail: ['¡Vaya…!', '哎呀'] } },
+            it: { lang: 'it-IT', souvenir: ['🍕', '披薩'],
+                  lines: { intro: ['Benvenuto!', '歡迎'], clear: ['Bravissimo!', '太棒了'], fail: ['Che peccato…', '真可惜'] } },
+            au: { lang: 'en-AU', souvenir: ['🦘', '袋鼠'],
+                  lines: { intro: ["G'day mate!", '你好啊'], clear: ['Ripper!', '讚啦'], fail: ['Aw, no worries.', '沒事沒事'] } },
+            ch: { lang: 'de-CH', souvenir: ['🍫', '巧克力'],
+                  lines: { intro: ['Grüezi!', '你好'], clear: ['Perfekt!', '完美'], fail: ['Schade…', '可惜'] } },
+            nl: { lang: 'nl-NL', souvenir: ['🌷', '鬱金香'],
+                  lines: { intro: ['Welkom!', '歡迎'], clear: ['Goed gedaan!', '做得好'], fail: ['Jammer…', '可惜'] } },
+            ca: { lang: 'en-CA', souvenir: ['🍁', '楓糖漿'],
+                  lines: { intro: ['Welcome, eh!', '歡迎'], clear: ['Beauty!', '漂亮'], fail: ['Sorry, eh.', '抱歉啦'] } },
+            gr: { lang: 'el-GR', souvenir: ['🏛️', '神廟'],
+                  lines: { intro: ['Καλώς ήρθες!', '歡迎'], clear: ['Μπράβο!', '好極了'], fail: ['Κρίμα…', '可惜'] } },
+            vn: { lang: 'vi-VN', souvenir: ['🍜', '河粉'],
+                  lines: { intro: ['Xin chào!', '你好'], clear: ['Giỏi lắm!', '很棒'], fail: ['Tiếc quá…', '好可惜'] } },
+            sa: { lang: 'ar-SA', souvenir: ['🐪', '駱駝'],
+                  lines: { intro: ['أهلاً بك!', '歡迎'], clear: ['أحسنت!', '做得好'], fail: ['للأسف…', '很遺憾'] } },
+            is: { lang: 'is-IS', souvenir: ['🌋', '火山'],
+                  lines: { intro: ['Velkomin!', '歡迎'], clear: ['Frábært!', '太棒了'], fail: ['Æ, svekjandi…', '唉，掃興'] } },
+            jm: { lang: 'en-JM', souvenir: ['🏝️', '海灘'],
+                  lines: { intro: ['Wah gwaan!', '你好嗎'], clear: ['Irie, mon!', '爽啦'], fail: ['Nuh worry yuhself.', '別擔心'] } }
         };
         COUNTRIES.forEach(c => Object.assign(c, COUNTRY_EXTRA[c.id] || {}));
         function sayLine(lv, key) {
@@ -1147,6 +1234,19 @@
             darkTimer = setTimeout(() => { darkEl.style.opacity = '0'; }, 2000);
         }
         function hideDark() { clearTimeout(darkTimer); darkEl.style.opacity = '0'; }
+        // 加拿大暴風雪 / 冰島永晝：白幕
+        const whiteEl = document.getElementById('white');
+        let whiteTimer = null, whiteUntil = 0;
+        function showWhite(ms, opacity, sun) {
+            whiteEl.classList.toggle('sun', !!sun);
+            whiteEl.style.opacity = String(opacity);
+            whiteUntil = Date.now() + ms;
+            clearTimeout(whiteTimer);
+            whiteTimer = setTimeout(() => { whiteEl.style.opacity = '0'; }, ms);
+        }
+        function hideWhite() { clearTimeout(whiteTimer); whiteEl.style.opacity = '0'; whiteUntil = 0; }
+        // 沙烏地石油噴發
+        let oilGushUntil = 0;
         // 西班牙：午睡，所有掉落物停 1.2 秒
         let frozen = false, frozenTimer = null;
         function siesta() {
@@ -1386,7 +1486,27 @@
             ua: { bpm: 112, wave: 'sine',     bass: [45, 0, 52, 0],
                   melody: [[64,1],[67,.5],[69,.5],[71,1],[69,.5],[67,.5],[64,1],[62,1],[60,1],[62,.5],[64,.5],[67,1],[64,1],[62,2]] },
             es: { bpm: 120, wave: 'sawtooth', bass: [40, 41, 43, 40],
-                  melody: [[76,.5],[77,.5],[76,.5],[74,.5],[72,1],[71,1],[69,.5],[71,.5],[72,.5],[74,.5],[72,.5],[71,.5],[69,1],[65,.5],[64,1.5]] }
+                  melody: [[76,.5],[77,.5],[76,.5],[74,.5],[72,1],[71,1],[69,.5],[71,.5],[72,.5],[74,.5],[72,.5],[71,.5],[69,1],[65,.5],[64,1.5]] },
+            it: { bpm: 130, wave: 'triangle', bass: [48, 55, 52, 55],
+                  melody: [[72,.5],[74,.5],[76,1],[74,.5],[72,.5],[71,1],[69,.5],[71,.5],[72,1],[76,1],[74,2]] },
+            au: { bpm: 116, wave: 'square', bass: [45, 45, 52, 45],
+                  melody: [[69,.5],[71,.5],[73,.5],[74,.5],[76,1],[74,.5],[73,.5],[71,1],[69,2]] },
+            ch: { bpm: 100, wave: 'sine', bass: [48, 0, 55, 0],
+                  melody: [[72,1],[71,1],[69,1],[67,1],[69,1],[71,1],[72,2],[76,1],[74,1],[72,2]] },
+            nl: { bpm: 124, wave: 'triangle', bass: [46, 53, 50, 53],
+                  melody: [[67,.5],[69,.5],[71,1],[72,.5],[71,.5],[69,1],[67,1],[71,1],[69,2]] },
+            ca: { bpm: 96, wave: 'triangle', bass: [45, 52, 48, 52],
+                  melody: [[64,1],[67,1],[71,1],[72,1],[71,1],[67,1],[64,2],[62,1],[64,2]] },
+            gr: { bpm: 128, wave: 'sawtooth', bass: [45, 45, 50, 52],
+                  melody: [[69,.5],[71,.5],[72,.5],[71,.5],[69,.5],[67,.5],[65,1],[67,.5],[69,.5],[71,1],[69,2]] },
+            vn: { bpm: 120, wave: 'triangle', bass: [50, 0, 57, 0],
+                  melody: [[69,.5],[72,.5],[74,.5],[72,.5],[69,.5],[67,.5],[64,1],[67,.5],[69,.5],[72,1],[69,2]] },
+            sa: { bpm: 104, wave: 'square', bass: [50, 0, 50, 57],
+                  melody: [[62,.5],[63,.5],[66,.5],[67,.5],[69,1],[67,.5],[66,.5],[63,1],[62,2]] },
+            is: { bpm: 76, wave: 'sine', bass: [45, 0, 0, 52],
+                  melody: [[69,1.5],[71,.5],[72,1],[74,1],[72,1],[69,2],[67,1],[69,3]] },
+            jm: { bpm: 90, wave: 'triangle', bass: [45, 0, 52, 0],
+                  melody: [[64,1],[0,.5],[67,.5],[69,1],[0,.5],[67,.5],[64,1],[0,.5],[62,.5],[64,2]] }
         };
         const MUSIC_VOL = 0.07;
         let musicTimer = null, musicNodes = [], musicAudio = null, musicId = null;
@@ -1687,6 +1807,21 @@
                 spawnItem(0, 'gold');
                 popText(140, 200, '🏃 衝線獎金！', '#ffd700');
             }
+            // 瑞士：連續接 5 張不漏，送金鈔（連擊斷掉代表漏了）
+            if (m === 'clockwork' && combo % 5 === 0) {
+                spawnItem(0, 'gold');
+                popText(130, 200, '⏱️ 精準獎金！', '#ffd700');
+            }
+            // 希臘：每 5 連擊摔一疊盤子，補金鈔
+            if (m === 'platesmash' && combo % 5 === 0) {
+                spawnItem(0, 'gold');
+                popText(130, 200, '🍽️ 盤子摔起來！', '#5dade2'); sfx.gold();
+            }
+            // 越南：每 8 連擊，爹地補一張大鈔
+            if (m === 'scooter' && combo % 8 === 0) {
+                spawnItem(0, 'gold');
+                popText(130, 200, '🛵 大鈔來了！', '#ffd700');
+            }
         }
 
         function showComboFlash() {
@@ -1905,6 +2040,8 @@
                 timeDisplay.style.color = '';
                 clockoutBtn.style.display = 'none';
                 if (lv.mech === 'wind') setWind(1.5);
+                container.classList.toggle('windmill-on', lv.mech === 'windmill');
+                oilGushUntil = 0;
                 setCountryFrame(lv);
                 startMusic(lv.id);           // 該國背景音樂
             } else if (endless) {
@@ -1961,6 +2098,13 @@
                 }
                 if (mech === 'siesta' && timeLeft > 1 && Math.random() < 0.18) siesta();
                 if (mech === 'quake' && timeLeft > 0 && timeLeft % 4 === 0) quake();
+                if (mech === 'blizzard' && timeLeft > 1 && Math.random() < 0.25) showWhite(1400, 0.6);
+                if (mech === 'whiteout' && timeLeft > 1 && Math.random() < 0.28) showWhite(2000, 0.85, true);
+                if (mech === 'oilgush' && timeLeft > 1 && timeLeft % 4 === 0) {
+                    oilGushUntil = Date.now() + 1600;
+                    for (let i = 0; i < 3; i++) spawnItem(0, 'gold', 30 + Math.random() * (containerWidth - 90));
+                    popText(130, 200, '⛽ 石油噴發！', '#f1c40f'); sfx.gold();
+                }
                 if (timeLeft <= 0) endLevel();
             }, 1000);
 
@@ -1992,7 +2136,8 @@
             clearTimeout(bossTimer);
             resetMega();
             hideSplash();
-            setWind(0); hideConfetti(); hideDark(); wakeUp();
+            setWind(0); hideConfetti(); hideDark(); hideWhite(); wakeUp();
+            container.classList.remove('windmill-on');
             setCountryFrame(null);
             stopMusic();
             clearTimeout(souvenirTimer);
@@ -2456,6 +2601,8 @@
 
         function buildItem(item, lv, rand, speed, offset, forceType, forceX) {
             let type, value = 0;
+            // 瑞士：等速、精準
+            if (lv.mech === 'clockwork') speed = lv.speedBase * lv.speedMul + 1.4;
 
             // 機率累加：藥盒 → 道具 → 金色鈔票 → 干擾小鈔 → 一般鈔票
             // 藥盒機率和速度隨連擊等比增加
@@ -2534,6 +2681,9 @@
                     // 法國：只掉 50 與 100
                     if (r2 < 0.6) { amt = '50';  speed += 1; }
                     else          { amt = '100'; speed += 3; }
+                } else if (lv.mech === 'scooter') {
+                    // 越南：幾乎都是小鈔
+                    amt = r2 < 0.75 ? '10' : '50';
                 } else if (r2 < 0.55) { amt = '10';  }
                 else if (r2 < 0.85)   { amt = '50';  speed += 1; }
                 else                  { amt = '100'; speed += 3; }
@@ -2576,10 +2726,11 @@
                 drift = dir * (lv.drift * (0.45 + Math.random() * 0.55));
             }
             let x = parseFloat(item.style.left);
-            const baseX = x;                       // 印度 S 形的中心線
+            let baseX = x;                         // 中心線（迴力鏢會重設）
             const sineAmp = 60 + Math.random() * 30;
             const sinePhase = Math.random() * Math.PI * 2;
             let stretched = false, stretchLeft = 0;   // 土耳其：被收回去的幀數
+            let spun = false;                          // 義大利：是否已轉滿一圈
 
             function fall() {
                 if (!isPlaying) { item.remove(); return; }
@@ -2594,11 +2745,22 @@
                 if (stretchLeft > 0) { stretchLeft--; topPos -= speed * 1.8; }
                 item.style.top = topPos + 'px';
                 const w = item.offsetWidth || 68;
-                if (lv.mech === 'sine') {
-                    // 印度：沿中心線做 S 形擺動
-                    x = baseX + sineAmp * Math.sin((topPos - 125) / 48 + sinePhase);
+                if (lv.mech === 'sine' || lv.mech === 'windmill' || lv.mech === 'reggae') {
+                    // 印度 S 形 / 荷蘭大風車 / 牙買加輕搖
+                    const amp = lv.mech === 'windmill' ? 95 : lv.mech === 'reggae' ? 32 : sineAmp;
+                    const spd = lv.mech === 'reggae' ? 70 : 48;
+                    x = baseX + amp * Math.sin((topPos - 125) / spd + sinePhase);
                     x = Math.max(0, Math.min(containerWidth - w, x));
                     item.style.left = x + 'px';
+                } else if (lv.mech === 'pizza') {
+                    // 義大利：邊轉邊繞小圈
+                    const ang = (topPos - 125) / 26;
+                    if (ang >= Math.PI * 2) spun = true;
+                    x = baseX + 24 * Math.cos(ang);
+                    x = Math.max(0, Math.min(containerWidth - w, x));
+                    item.style.left = x + 'px';
+                    if (type !== 'life' && type !== 'souvenir' && type !== 'scissors' && type !== 'razor')
+                        item.style.transform = `rotate(${ang}rad)`;   // 只轉錢，別蓋掉道具動畫
                 } else if (lv.mech === 'homing' && type === 'pill') {
                     // 蒙古：藥盒朝錢包 x 追過來
                     const target = basketX + basketWidth / 2 - w / 2;
@@ -2652,6 +2814,7 @@
                         const first = collectSouvenir(lv);
                         popText(px - 20, py, `${lv.souvenir[0]} ${lv.souvenir[1]}${first ? ' 入袋' : ''} +$300`, '#fff');
                         sfx.ach();
+                        if (lv.mech === 'blizzard') { hideWhite(); popText(px, py - 20, '🍁 視野清出來了', '#2ecc71'); }
 
                     } else if (type === 'hongbao') {
                         // 中國：拆紅包，50 / 100 / 200 / 500，或空包扣 50
@@ -2723,6 +2886,11 @@
                         if (lv.mech === 'confetti' && confettiOn)                        { gain *= 2; tag += ' 🎉×2'; }   // 巴西：彩帶期間
                         if (lv.mech === 'stretch' && stretched)                          { gain *= 2; tag += ' 🍦×2'; }   // 土耳其：被收回過
                         if (lv.mech === 'siesta' && postSiesta)                          { gain *= 3; tag += ' ☕×3'; postSiesta = false; }   // 西班牙：醒來第一張
+                        if (lv.mech === 'pizza' && spun)                                 { gain *= 2; tag += ' 🍕×2'; }   // 義大利：轉滿一圈
+                        if (lv.mech === 'boomerang' && recycled)                         { gain *= 2; tag += ' 🪃×2'; }   // 澳洲：彈回來的
+                        if (lv.mech === 'windmill' && (basketX < 40 || basketX > containerWidth - basketWidth - 40)) { gain *= 2; tag += ' 🌀×2'; }   // 荷蘭：邊緣
+                        if (lv.mech === 'oilgush' && type === 'gold' && Date.now() < oilGushUntil) { gain *= 2; tag += ' ⛽×2'; }   // 沙烏地：噴發中的金鈔
+                        if (lv.mech === 'whiteout' && Date.now() < whiteUntil)            { gain = Math.round(gain * 1.5); tag += ' ☀️×1.5'; }   // 冰島：永晝白光中
                         score += gain;
                         raw += value;      // 門檻只算面額
                         addCombo();
@@ -2748,15 +2916,25 @@
                 }
 
                 if (topPos > 600) {
-                    // 埃及第二層：漏掉的金鈔被金字塔回收，從頂端再掉一次
+                    // 埃及：漏掉的金鈔被金字塔回收，再掉一次
                     if (lv.mech === 'goldrush' && type === 'gold' && !recycled) {
                         recycled = true; topPos = 125;
                         popText(x, 150, '🔺 金字塔回收', '#ffd700');
                         requestAnimationFrame(fall); return;
                     }
+                    // 澳洲：漏掉的鈔票像迴力鏢彈回頂端再掉一次
+                    if (lv.mech === 'boomerang' && /^\d+$/.test(type) && !recycled) {
+                        recycled = true; topPos = 125; baseX = Math.random() * (containerWidth - w);
+                        x = baseX; item.style.left = x + 'px';
+                        popText(x, 150, '🪃 迴力鏢！', '#00843d');
+                        requestAnimationFrame(fall); return;
+                    }
                     if (type !== 'pill' && type !== 'scissors' && type !== 'razor' && type !== 'life' && type !== 'souvenir') {
-                        if (combo >= 3) popText(x, 560, `連擊 ×${combo} 斷了`, '#e74c3c');
-                        resetCombo();
+                        // 牙買加：漏接不斷連擊
+                        if (lv.mech !== 'reggae') {
+                            if (combo >= 3) popText(x, 560, `連擊 ×${combo} 斷了`, '#e74c3c');
+                            resetCombo();
+                        }
                     }
                     item.remove();
                 }
