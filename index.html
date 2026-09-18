@@ -335,6 +335,27 @@
             filter: drop-shadow(1px 2px 4px rgba(0,0,0,0.5));
         }
 
+        /* ── 補命：爹地人頭代幣 ── */
+        .life-item {
+            width: 44px; height: 44px;
+            background-image: url('assets/life.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            filter: drop-shadow(0 0 6px #f1c40f) drop-shadow(0 0 12px #f39c12);
+            animation: lifeSpin 1.2s linear infinite;
+        }
+        @keyframes lifeSpin {
+            0%   { transform: rotateY(0deg); }
+            100% { transform: rotateY(360deg); }
+        }
+        .life-ico {
+            width: 16px; height: 16px;
+            vertical-align: middle;
+            margin-right: 1px;
+        }
+        .life-ico.lost { opacity: 0.25; filter: grayscale(1); }
+
         /* ── 金色鈔票 ── */
         .gold-bill {
             width: 68px; height: 29px;
@@ -545,7 +566,8 @@
                 <span style="color:#5dade2">🎮 滑鼠 / 方向鍵 / WASD / 手指　上下左右都能動</span><br>
                 <span class="height-hint">🚀 錢包越高，接到的錢加成越多（最高 ×1.5）</span><br>
                 <span style="color: #ffeb3b; font-weight: bold;">⚠️ 接到「適尿通」扣 50，爹地頭髮 +1</span><br>
-                <span style="color: #e74c3c; font-weight: bold;">☠️ 髮量 9/9 還再吃一盒 → 直接結束</span>
+                <span style="color: #f1c40f; font-weight: bold;"><img class="life-ico" src="assets/life.png" alt=""> 三命三關共用，沒達標或髮量爆表扣一命，接到爹地人頭補一命</span><br>
+                <span style="color: #e74c3c; font-weight: bold;">☠️ 命用完 → 結束</span>
             </p>
             <button id="start-btn" style="margin-top:8px">開始發小費</button>
             <button id="start-endless-btn" class="small-btn endless-btn" style="display:none">🌙 加班模式（無盡）</button>
@@ -781,7 +803,8 @@
             { id: 'high100', icon: '🚀', name: '高空作業',   desc: '在最高處接到 $100 以上的鈔票' },
             { id: 'ot60',    icon: '🌙', name: '加班一小時', desc: '加班模式撐過 60 秒' },
             { id: 'ot120',   icon: '🧟', name: '爆肝',       desc: '加班模式撐過 120 秒' },
-            { id: 'rich',    icon: '🏦', name: '萬元戶',     desc: '單場總小費超過 $10000' }
+            { id: 'rich',    icon: '🏦', name: '萬元戶',     desc: '單場總小費超過 $10000' },
+            { id: 'fullhp',  icon: '💖', name: '一命未丟',   desc: '三條命一條都沒用就過三關' }
         ];
         let achUnlocked = load('wyd_ach', {});
         let runAch = [];              // 本場新解鎖的成就
@@ -910,10 +933,28 @@
             return 1 + 0.5 * Math.max(0, Math.min(1, f));
         }
 
+        // ===== 命 =====
+        const MAX_LIVES   = 3;
+        const LIFE_CHANCE = 0.02;    // 命未滿時，每次生成掉補命代幣的機率
+        const LIFE_PER_LEVEL = 2;    // 一關（加班模式：一波）最多掉幾個補命
+        const RESCUE_HAIR = 4;       // 藥盒過量急救後髮量回到 5/9
+        let lives = MAX_LIVES;
+        let lostLifeThisRun = false;
+        let lifeSpawnedThisLevel = 0;
+        function livesHtml() {
+            let h = '';
+            for (let i = 0; i < MAX_LIVES; i++)
+                h += `<img class="life-ico ${i < lives ? '' : 'lost'}" src="assets/life.png" alt="">`;
+            return h;
+        }
+        function renderLives() {
+            hairDisplay.innerHTML = `髮量 ${hairLevel + 1}/9<br>${livesHtml()}`;
+        }
+
         function setHair(level) {
             hairLevel = level;
             boss.style.backgroundImage = `url('${BOSS_FACES[hairLevel]}')`;
-            hairDisplay.innerText = `髮量 ${hairLevel + 1}/9`;
+            renderLives();
             hairDisplay.style.color = hairLevel >= 8 ? '#e74c3c'
                                     : hairLevel >= 6 ? '#e67e22' : '#f5b041';
         }
@@ -1021,7 +1062,7 @@
                 `目標：<span style="color:#f1c40f">$${lv.target}</span>　限時 ${lv.time} 秒<br>` +
                 `<span class="lv-tip">${lv.tip}</span><br>` +
                 `目前髮量 <span style="color:#f5b041">${hairLevel + 1}/9</span>　` +
-                `已存 <span style="color:#2ecc71">${fmtMoney(bank)}</span>`;
+                `已存 <span style="color:#2ecc71">${fmtMoney(bank)}</span>　${livesHtml()}`;
             levelBtn.innerText = '開工';
             startScreen.style.display = 'none';
             gameOverScreen.style.display = 'none';
@@ -1035,6 +1076,7 @@
             const lv = curLv();
             score = 0;                 // 沒過關重玩 → 本關分數歸零
             pillsThisLevel = 0;
+            lifeSpawnedThisLevel = 0;
             timeLeft = lv.time;
             isPlaying = true;
             resetCombo();
@@ -1066,6 +1108,7 @@
                     elapsed++;
                     timeDisplay.innerText = `${elapsed}s`;
                     if (elapsed % 15 === 0) {
+                        lifeSpawnedThisLevel = 0;   // 加班模式每一波重新計算補命上限
                         levelDisplay.innerHTML = `加班中<br><span class="lv-name">第 ${endlessWave()} 波</span>`;
                         popText(150, 300, `第 ${endlessWave()} 波！`, '#8e44ad');
                         sfx.wave();
@@ -1141,11 +1184,15 @@
                 levelBtn.innerText = '繼續';
                 levelScreen.style.display = 'flex';
             } else {
+                // 沒達標：扣一命；沒命了就結束
+                lives--; lostLifeThisRun = true; renderLives();
+                if (lives <= 0) { finish('broke'); return; }
                 sfx.fail();
                 levelTitle.innerText = '❌ 爹地收手了';
                 levelBody.innerHTML =
                     `只收到 <span style="color:#e74c3c">${fmtMoney(score)}</span>，` +
                     `差 <span style="color:#e74c3c">${fmtMoney(lv.target - score)}</span><br>` +
+                    `用掉一命 → 剩 ${livesHtml()}<br>` +
                     `<span class="lv-tip">本關分數歸零重來，但髮量不會還你</span><br>` +
                     `目前髮量 <span style="color:#f5b041">${hairLevel + 1}/9</span>`;
                 levelBtn.innerText = '再來一次';
@@ -1153,7 +1200,30 @@
             }
         }
 
-        // 整場結束：reason = 'clear'（三關全過）| 'overdose'（藥盒過量）| 'clockout'（加班主動下班）
+        // 藥盒過量：有命就急救（扣一命、髮量回 5/9），沒命就結束。
+        // 回傳 true 代表遊戲繼續進行（只有加班模式會在原地繼續）
+        function overdoseHit() {
+            if (lives <= 0) { finish('overdose'); return false; }
+            lives--; lostLifeThisRun = true;
+            setHair(RESCUE_HAIR);
+            sfx.fail();
+            if (endless) {
+                popText(basketX - 30, basketY - 40, `急救！-1命　髮量回 ${RESCUE_HAIR + 1}/9`, '#e74c3c');
+                toast(`☠️ 適尿通過量，用掉一命，剩 ${lives} 命`);
+                return true;
+            }
+            stopLevel();
+            levelTitle.innerText = '☠️ 適尿通過量！';
+            levelBody.innerHTML =
+                `髮量爆表還硬吃一盒，送醫急救<br>` +
+                `用掉一命 → 剩 ${livesHtml()}<br>` +
+                `<span class="lv-tip">髮量洗回 <span style="color:#f5b041">${RESCUE_HAIR + 1}/9</span>，本關分數歸零重來</span>`;
+            levelBtn.innerText = '再來一次';
+            levelScreen.style.display = 'flex';
+            return false;
+        }
+
+        // 整場結束：reason = 'clear'（三關全過）| 'overdose'（藥盒過量且沒命）| 'broke'（沒達標且沒命）| 'clockout'（加班主動下班）
         let pendingEntry = null;   // 等待輸入名字的排行榜資料
         const nameEntry = document.getElementById('name-entry');
         const nameInput = document.getElementById('name-input');
@@ -1181,11 +1251,19 @@
             } else if (reason === 'overdose') {
                 h2.innerText = '☠️ 適尿通過量！';
                 finalScore.innerHTML =
-                    `髮量爆表到 9/9 還硬吃一盒<br>` +
+                    `三條命都用完，最後一盒直接送走<br>` +
                     `倒在第 ${levelIdx + 1} 關，結算 ${fmtMoney(total)}`;
                 finalScore.style.color = '#e74c3c';
                 sfx.fail();
+            } else if (reason === 'broke') {
+                h2.innerText = '💸 三命用盡';
+                finalScore.innerHTML =
+                    `第 ${levelIdx + 1} 關業績一直沒達標<br>` +
+                    `爹地不再給機會，結算 ${fmtMoney(total)}`;
+                finalScore.style.color = '#e74c3c';
+                sfx.fail();
             } else {
+                if (!lostLifeThisRun) unlock('fullhp');
                 const rank = hairLevel <= 2 ? '精算師 —— 錢賺了，頭髮也顧住了'
                            : hairLevel <= 5 ? '普通上班族 —— 有得有失'
                            : hairLevel <= 7 ? '拚命三郎 —— 這錢賺得有點傷'
@@ -1408,10 +1486,10 @@
                     resetCombo();
                     sfx.pill();
                     if (hairLevel >= 8) {
-                        // 髮量已是 9/9 → 直接過量
+                        // 髮量已是 9/9 → 過量，交給 overdoseHit 決定急救或結束
                         updateScore();
                         item.remove();
-                        finish('overdose');
+                        if (overdoseHit()) megaCooldownFor(4000);
                         return;
                     }
                     setHair(Math.min(hairLevel + 2, 8));
@@ -1456,7 +1534,10 @@
             const comboPillMul = 1 + combo * 0.08;
             const comboPillSpd = combo * 0.3;
             const p_pill = Math.min(lv.pill * comboPillMul, 0.65);  // 最高 65%
-            const p_tool = p_pill + lv.tool;
+            // 命滿或本關已掉滿 LIFE_PER_LEVEL 個就不掉
+            const canLife = lives < MAX_LIVES && lifeSpawnedThisLevel < LIFE_PER_LEVEL;
+            const p_life = p_pill + (canLife ? LIFE_CHANCE : 0);
+            const p_tool = p_life + lv.tool;
             const p_gold = p_tool + lv.gold;
             const p_junk = p_gold + (lv.junk ? 0.25 : 0);
 
@@ -1464,6 +1545,13 @@
                 item.classList.add('pill-box');
                 type = 'pill';
                 speed += 1 + comboPillSpd;
+
+            } else if (rand < p_life) {
+                // 補一命：爹地人頭代幣
+                item.classList.add('life-item');
+                type = 'life';
+                lifeSpawnedThisLevel++;
+                speed += 4;     // 跟金鈔差不多快，要搶
 
             } else if (rand < p_tool) {
                 // 剪刀 70%：髮量 -1；刮鬍刀 30%：髮量 -2，掉得更快
@@ -1544,11 +1632,17 @@
                         if (hairLevel >= 8) {
                             updateScore();
                             item.remove();
-                            finish('overdose');
+                            overdoseHit();
                             return;
                         }
                         setHair(hairLevel + 1);
                         popText(px, py, '-$50', '#e74c3c');
+
+                    } else if (type === 'life') {
+                        if (lives < MAX_LIVES) { lives++; renderLives(); popText(px, py, '+1 命！', '#f1c40f'); }
+                        else popText(px, py, '命已滿', '#95a5a6');
+                        sfx.gold();
+                        // 不加分、不影響連擊
 
                     } else if (type === 'scissors' || type === 'razor') {
                         // 剪刀：髮量 -1；刮鬍刀：髮量 -2（最低 0）
@@ -1594,7 +1688,7 @@
                 }
 
                 if (topPos > 600) {
-                    if (type !== 'pill' && type !== 'scissors' && type !== 'razor') {
+                    if (type !== 'pill' && type !== 'scissors' && type !== 'razor' && type !== 'life') {
                         if (combo >= 3) popText(x, 560, `連擊 ×${combo} 斷了`, '#e74c3c');
                         resetCombo();
                     }
@@ -1609,6 +1703,7 @@
         function resetRun() {
             levelIdx = 0; bank = 0; score = 0; hairLevel = 0; elapsed = 0;
             runAch = []; goldThisRun = 0; dodgesThisRun = 0; pillsThisLevel = 0;
+            lives = MAX_LIVES; lostLifeThisRun = false;
         }
         function newGame() {
             ensureAudio();
