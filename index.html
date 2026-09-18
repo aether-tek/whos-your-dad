@@ -345,6 +345,17 @@
             filter: drop-shadow(0 0 6px #f1c40f) drop-shadow(0 0 12px #f39c12);
             animation: lifeSpin 1.2s linear infinite;
         }
+        .life-item::after {
+            content: '+1 命';
+            position: absolute;
+            left: 50%; bottom: -16px;
+            transform: translateX(-50%);
+            font-size: 12px;
+            font-weight: 900;
+            color: #f1c40f;
+            white-space: nowrap;
+            text-shadow: 0 1px 3px #000, 0 0 6px #000;
+        }
         @keyframes lifeSpin {
             0%   { transform: rotateY(0deg); }
             100% { transform: rotateY(360deg); }
