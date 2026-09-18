@@ -935,7 +935,8 @@
 
         // ===== 命 =====
         const MAX_LIVES   = 3;
-        const LIFE_CHANCE = 0.02;    // 命未滿時，每次生成掉補命代幣的機率
+        const LIFE_CHANCE = 0.04;    // 每次生成掉補命代幣的機率
+        const LIFE_FULL_BONUS = 100; // 命滿時接到代幣改給的獎金
         const LIFE_PER_LEVEL = 3;    // 一關（加班模式：一波）最多掉幾個補命
         const RESCUE_HAIR = 4;       // 藥盒過量急救後髮量回到 5/9
         let lives = MAX_LIVES;
@@ -1534,8 +1535,8 @@
             const comboPillMul = 1 + combo * 0.08;
             const comboPillSpd = combo * 0.3;
             const p_pill = Math.min(lv.pill * comboPillMul, 0.65);  // 最高 65%
-            // 命滿或本關已掉滿 LIFE_PER_LEVEL 個就不掉
-            const canLife = lives < MAX_LIVES && lifeSpawnedThisLevel < LIFE_PER_LEVEL;
+            // 每關最多掉 LIFE_PER_LEVEL 個；命滿也照掉，接到改給獎金
+            const canLife = lifeSpawnedThisLevel < LIFE_PER_LEVEL;
             const p_life = p_pill + (canLife ? LIFE_CHANCE : 0);
             const p_tool = p_life + lv.tool;
             const p_gold = p_tool + lv.gold;
@@ -1640,9 +1641,9 @@
 
                     } else if (type === 'life') {
                         if (lives < MAX_LIVES) { lives++; renderLives(); popText(px, py, '+1 命！', '#f1c40f'); }
-                        else popText(px, py, '命已滿', '#95a5a6');
+                        else { score += LIFE_FULL_BONUS; popText(px, py, `命已滿 +$${LIFE_FULL_BONUS}`, '#f1c40f'); }
                         sfx.gold();
-                        // 不加分、不影響連擊
+                        // 不影響連擊
 
                     } else if (type === 'scissors' || type === 'razor') {
                         // 剪刀：髮量 -1；刮鬍刀：髮量 -2（最低 0）
