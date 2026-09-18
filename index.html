@@ -337,7 +337,7 @@
 
         /* ── 補命：爹地人頭代幣 ── */
         .life-item {
-            width: 44px; height: 44px;
+            width: 76px; height: 76px;
             background-image: url('assets/life.png');
             background-size: contain;
             background-repeat: no-repeat;
@@ -566,7 +566,7 @@
                 <span style="color:#5dade2">🎮 滑鼠 / 方向鍵 / WASD / 手指　上下左右都能動</span><br>
                 <span class="height-hint">🚀 錢包越高，接到的錢加成越多（最高 ×1.5）</span><br>
                 <span style="color: #ffeb3b; font-weight: bold;">⚠️ 接到「適尿通」扣 50，爹地頭髮 +1</span><br>
-                <span style="color: #f1c40f; font-weight: bold;"><img class="life-ico" src="assets/life.png" alt=""> 三命三關共用，沒達標或髮量爆表扣一命，接到爹地人頭補一命</span><br>
+                <span style="color: #f1c40f; font-weight: bold;"><img class="life-ico" src="assets/life.png" alt=""> 開局三命、最多五命，三關共用；沒達標或髮量爆表扣一命，接到爹地人頭補一命</span><br>
                 <span style="color: #e74c3c; font-weight: bold;">☠️ 命用完 → 結束</span>
             </p>
             <button id="start-btn" style="margin-top:8px">開始發小費</button>
@@ -645,11 +645,11 @@
               tip: '全部垂直落下，穩穩接就好' },
             { name: '關卡二 · 爹地心情好', time: 27, target: 910,
               pill: 0.27, spawn: 300, bossMove: 270, speedBase: 2.8,
-              drift: 1.8, speedMul: 1.0, junk: false, gold: 0.04, tool: 0.05,
+              drift: 1.8, speedMul: 0.7, junk: false, gold: 0.04, tool: 0.05,
               tip: '連擊越高，藥盒越多越快，小心別斷' },
             { name: '關卡三 · 天女散花', time: 25, target: 1200,
               pill: 0.30, spawn: 270, bossMove: 250, speedBase: 2.9,
-              drift: 2.2, speedMul: 1.05, junk: true, gold: 0.07, tool: 0.06,
+              drift: 2.2, speedMul: 0.74, junk: true, gold: 0.07, tool: 0.06,
               tip: '連擊拉越高，藥盒就越瘋，背水一戰' }
         ];
         // 播放結尾影片的關卡（最後一關）。測試時可暫時改成 0 = 第一關就播
@@ -804,7 +804,7 @@
             { id: 'ot60',    icon: '🌙', name: '加班一小時', desc: '加班模式撐過 60 秒' },
             { id: 'ot120',   icon: '🧟', name: '爆肝',       desc: '加班模式撐過 120 秒' },
             { id: 'rich',    icon: '🏦', name: '萬元戶',     desc: '單場總小費超過 $10000' },
-            { id: 'fullhp',  icon: '💖', name: '一命未丟',   desc: '三條命一條都沒用就過三關' }
+            { id: 'fullhp',  icon: '💖', name: '一命未丟',   desc: '一條命都沒用就過三關' }
         ];
         let achUnlocked = load('wyd_ach', {});
         let runAch = [];              // 本場新解鎖的成就
@@ -934,12 +934,13 @@
         }
 
         // ===== 命 =====
-        const MAX_LIVES   = 3;
+        const MAX_LIVES   = 5;       // 命的上限
+        const START_LIVES = 3;       // 開局命數
         const LIFE_CHANCE = 0.04;    // 每次生成掉補命代幣的機率
         const LIFE_FULL_BONUS = 100; // 命滿時接到代幣改給的獎金
         const LIFE_PER_LEVEL = 3;    // 一關（加班模式：一波）最多掉幾個補命
         const RESCUE_HAIR = 4;       // 藥盒過量急救後髮量回到 5/9
-        let lives = MAX_LIVES;
+        let lives = START_LIVES;
         let lostLifeThisRun = false;
         let lifeSpawnedThisLevel = 0;
         function livesHtml() {
@@ -1552,7 +1553,7 @@
                 item.classList.add('life-item');
                 type = 'life';
                 lifeSpawnedThisLevel++;
-                speed += 4;     // 跟金鈔差不多快，要搶
+                speed = Math.max(1.5, speed * 0.5);   // 全場最慢，讓玩家看清楚照片
 
             } else if (rand < p_tool) {
                 // 剪刀 70%：髮量 -1；刮鬍刀 30%：髮量 -2，掉得更快
@@ -1704,7 +1705,7 @@
         function resetRun() {
             levelIdx = 0; bank = 0; score = 0; hairLevel = 0; elapsed = 0;
             runAch = []; goldThisRun = 0; dodgesThisRun = 0; pillsThisLevel = 0;
-            lives = MAX_LIVES; lostLifeThisRun = false;
+            lives = START_LIVES; lostLifeThisRun = false;
         }
         function newGame() {
             ensureAudio();
