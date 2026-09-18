@@ -564,10 +564,10 @@
         #passport-screen h2 { margin: 0 0 6px; font-size: 18px; }
         .pp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; }
         .pp-item { text-align: center; font-size: 12px; color: #bdc3c7; position: relative; }
-        .pp-item img { width: 100%; height: 130px; object-fit: cover; border-radius: 8px; border: 2px solid #444; }
+        .pp-item img { width: 100%; height: 96px; object-fit: cover; object-position: top; border-radius: 8px; border: 2px solid #444; }
         .pp-item.locked img { filter: grayscale(1) brightness(0.5); }
         .pp-item .pp-stamp {
-            position: absolute; top: 40px; left: 50%;
+            position: absolute; top: 30px; left: 50%;
             transform: translateX(-50%) rotate(-18deg);
             border: 3px solid #e74c3c; color: #e74c3c;
             border-radius: 6px; padding: 2px 6px;
@@ -770,15 +770,15 @@
             { name: '關卡一 · 隨手給幾張', time: 28, target: 390,
               pill: 0.20, spawn: 290, bossMove: 300, speedBase: 3,
               drift: 0,   speedMul: 1.0, junk: false, gold: 0,    tool: 0.04,
-              tip: '全部垂直落下，穩穩接就好' },
+              tip: '全部垂直落下，沒有斜線，穩穩接就好' },
             { name: '關卡二 · 爹地心情好', time: 27, target: 910,
               pill: 0.27, spawn: 300, bossMove: 270, speedBase: 2.8,
               drift: 1.8, speedMul: 0.7, junk: false, gold: 0.04, tool: 0.05,
-              tip: '連擊越高，藥盒越多越快，小心別斷' },
+              tip: '開始走斜線，還有金鈔；連擊越高藥盒越多越快' },
             { name: '關卡三 · 天女散花', time: 25, target: 1200,
               pill: 0.30, spawn: 270, bossMove: 250, speedBase: 2.9,
               drift: 2.2, speedMul: 0.74, junk: true, gold: 0.07, tool: 0.06,
-              tip: '連擊拉越高，藥盒就越瘋，背水一戰' }
+              tip: '斜線更斜，小鈔會糊你一臉、還會斷連擊' }
         ];
         // 播放結尾影片的關卡（最後一關）。測試時可暫時改成 0 = 第一關就播
         const WIN_AFTER_LEVEL = LEVELS.length - 1;
@@ -809,7 +809,19 @@
             { id: 'br', flag: '🇧🇷', country: '巴西',   name: '巴西 · 嘉年華彩帶',  img: 'assets/country-brazil.jpg',   currency: 'R$',
               time: 30, target: 900,  pill: 0.27, spawn: 270, bossMove: 250, speedBase: 2.9, drift: 1.5, speedMul: 0.9,
               junk: true,  gold: 0.05, tool: 0.05, mech: 'confetti', accent: '#22c55e',
-              tip: '彩帶會隨時飄過來遮住畫面，被遮住時憑感覺也要接' }
+              tip: '彩帶會隨時飄過來遮住畫面，被遮住時憑感覺也要接' },
+            { id: 'kr', flag: '🇰🇷', country: '韓國',   name: '首爾 · 連擊狂熱',   img: 'assets/country-korea.jpg',    currency: '₩',
+              time: 30, target: 1100, pill: 0.27, spawn: 270, bossMove: 250, speedBase: 2.9, drift: 1.0, speedMul: 0.9,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'kcombo', accent: '#3b5bdb',
+              tip: '連擊倍率翻倍，但斷擊要罰錢：連擊 ×N 斷掉扣 N×10' },
+            { id: 'mn', flag: '🇲🇳', country: '蒙古',   name: '蒙古 · 草原追擊',   img: 'assets/country-mongolia.jpg', currency: '₮',
+              time: 30, target: 900,  pill: 0.30, spawn: 280, bossMove: 260, speedBase: 2.8, drift: 0.6, speedMul: 0.9,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'homing', accent: '#c0392b',
+              tip: '藥盒會像騎兵一樣朝你的錢包追過來，用速度甩開它' },
+            { id: 'ke', flag: '🇰🇪', country: '肯亞',   name: '肯亞 · 馬拉松爹地',  img: 'assets/country-kenya.jpg',    currency: 'KSh',
+              time: 30, target: 1000, pill: 0.22, spawn: 200, bossMove: 110, speedBase: 2.9, drift: 0.4, speedMul: 0.9,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'sprint', accent: '#111111',
+              tip: '爹地跑得飛快、撒得又密，落點完全不能預測' }
         ];
         const TRIP_STOPS = 3;          // 一趟出差跑幾國
         let trip = false;              // 目前是否在出差模式
@@ -997,7 +1009,7 @@
             { id: 'rich',    icon: '🏦', name: '萬元戶',     desc: '單場總小費超過 $10000' },
             { id: 'fullhp',  icon: '💖', name: '一命未丟',   desc: '一條命都沒用就過三關' },
             { id: 'trip1',   icon: '✈️', name: '第一次出差', desc: '完成一趟世界出差' },
-            { id: 'passport', icon: '🛂', name: '環遊世界',   desc: '護照集滿六國印章' }
+            { id: 'passport', icon: '🛂', name: '環遊世界',   desc: '護照集滿所有國家的印章' }
         ];
 
         // ===== 護照（出差過的國家）=====
@@ -1112,7 +1124,15 @@
         const bossWidth = 109;
 
         let combo = 0;
-        function resetCombo() { combo = 0; }
+        function resetCombo() {
+            // 韓國：斷擊罰錢（連擊 ×N 斷掉扣 N×10）
+            if (isPlaying && combo >= 3 && curLv().mech === 'kcombo') {
+                const fine = combo * 10;
+                score -= fine;
+                popText(basketX - 10, basketY - 58, `斷擊罰 -$${fine}`, '#ff6b6b');
+            }
+            combo = 0;
+        }
 
         function addCombo() {
             combo += 1;
@@ -1291,11 +1311,12 @@
             else levelImg.style.display = 'none';
             levelBody.innerHTML =
                 (trip ? `第 ${levelIdx + 1} 站 / ${tripLevels.length}　` : '') +
-                `目標：<span style="color:#f1c40f">$${lv.target}</span>　限時 ${lv.time} 秒<br>` +
-                `<span class="lv-tip">${lv.tip}</span><br>` +
+                `目標：<span style="color:#f1c40f">$${lv.target}</span>　達標即過關　限時 ${lv.time} 秒<br>` +
+                `<span style="color:#f39c12;font-weight:bold">⭐ 本關特色：</span><span class="lv-tip" style="color:#ecf0f1">${lv.tip}</span><br>` +
                 `目前髮量 <span style="color:#f5b041">${hairLevel + 1}/9</span>　` +
                 `已存 <span style="color:#2ecc71">${fmtMoney(bank)}</span>　${livesHtml()}`;
             levelBtn.innerText = '開工';
+            levelBtn.dataset.action = 'start';
             startScreen.style.display = 'none';
             gameOverScreen.style.display = 'none';
             levelScreen.style.display = 'flex';
@@ -1310,8 +1331,8 @@
             pillsThisLevel = 0;
             lifeSpawnedThisLevel = 0;
             timeLeft = lv.time;
+            combo = 0;                 // 直接歸零，避免韓國的斷擊罰金在開關時觸發
             isPlaying = true;
-            resetCombo();
             resetMega();
             resetBasket();
             hideSplash();
@@ -1437,6 +1458,7 @@
                     `下一${trip ? '站' : '關'}：${trip ? curLevels()[levelIdx].flag + ' ' : ''}${curLevels()[levelIdx].name}`;
                 if (trip) { levelImg.src = curLevels()[levelIdx].img; levelImg.style.display = 'block'; }
                 levelBtn.innerText = '繼續';
+                levelBtn.dataset.action = 'intro';    // 先看下一關的特色說明，再開工
                 levelScreen.style.display = 'flex';
             } else {
                 // 沒達標：扣一命；沒命了就結束
@@ -1451,6 +1473,7 @@
                     `<span class="lv-tip">本關分數歸零重來，但髮量不會還你</span><br>` +
                     `目前髮量 <span style="color:#f5b041">${hairLevel + 1}/9</span>`;
                 levelBtn.innerText = '再來一次';
+                levelBtn.dataset.action = 'start';
                 levelScreen.style.display = 'flex';
             }
         }
@@ -1474,6 +1497,7 @@
                 `用掉一命 → 剩 ${livesHtml()}<br>` +
                 `<span class="lv-tip">髮量洗回 <span style="color:#f5b041">${RESCUE_HAIR + 1}/9</span>，本關分數歸零重來</span>`;
             levelBtn.innerText = '再來一次';
+            levelBtn.dataset.action = 'start';
             levelScreen.style.display = 'flex';
             return false;
         }
@@ -1902,6 +1926,12 @@
                     x = baseX + sineAmp * Math.sin((topPos - 125) / 48 + sinePhase);
                     x = Math.max(0, Math.min(containerWidth - w, x));
                     item.style.left = x + 'px';
+                } else if (lv.mech === 'homing' && type === 'pill') {
+                    // 蒙古：藥盒朝錢包 x 追過來
+                    const target = basketX + basketWidth / 2 - w / 2;
+                    x += Math.sign(target - x) * Math.min(1.4, Math.abs(target - x));
+                    x = Math.max(0, Math.min(containerWidth - w, x));
+                    item.style.left = x + 'px';
                 } else if (drift || windX) {
                     x += drift + windX;            // 蘇格蘭：加上風力
                     if (x < 0) { x = 0; drift = -drift; }               // 撞左牆反彈
@@ -1964,8 +1994,8 @@
                         popText(px, py, `+$${value}`, '#95a5a6');
 
                     } else {
-                        // 一般鈔票與金鈔：連擊倍率 × 高空加成
-                        const mul = comboMultiplier();
+                        // 一般鈔票與金鈔：連擊倍率 × 高空加成（韓國：連擊倍率翻倍）
+                        const mul = comboMultiplier() * (lv.mech === 'kcombo' && combo >= 2 ? 2 : 1);
                         const hb  = heightBonus();
                         const gain = Math.round(value * mul * hb);
                         score += gain;
@@ -1984,6 +2014,8 @@
                     }
                     updateScore();
                     item.remove();
+                    // 分數達標就直接過關，不用等時間到（加班模式沒有目標）
+                    if (!endless && score >= lv.target) endLevel();
                     return;
                 }
 
@@ -2051,7 +2083,10 @@
             gameOverScreen.style.display = 'none';
             playWinVideo(() => { gameOverScreen.style.display = 'flex'; });
         });
-        levelBtn.addEventListener('click', startLevel);
+        levelBtn.addEventListener('click', () => {
+            if (levelBtn.dataset.action === 'intro') showLevelIntro();
+            else startLevel();
+        });
     </script>
 </body>
 </html>
