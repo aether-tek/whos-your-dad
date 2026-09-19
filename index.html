@@ -2350,9 +2350,13 @@
                     document.getElementById('passport-screen').style.display = 'none';
                     newTaiwan();
                 });
+                const twSay = {};
+                twSay[TAIWAN.img]  = '夜市走一波，呷飽沒！';
+                twSay[TAIWAN.img2] = '報告班長！下基地震撼教育！';
+                twSay[TAIWAN.img3] = '進無塵室，晶圓衝一波！';
                 card.querySelectorAll('.tw-pic').forEach(btn =>
                     btn.addEventListener('click', () => openPhoto(btn.dataset.img + AV,
-                        () => playVoice('tw', 'intro', TAIWAN.lines.intro[0], TAIWAN.lang))));
+                        () => say(twSay[btn.dataset.img] || TAIWAN.lines.intro[0], 'zh-TW'))));
             }
         }
         document.getElementById('pp-detail').addEventListener('click', (e) => {
