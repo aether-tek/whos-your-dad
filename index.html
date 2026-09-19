@@ -2735,6 +2735,9 @@
             ArrowDown: 'down',  s: 'down',  S: 'down'
         };
         window.addEventListener('keydown', (e) => {
+            // 焦點在輸入框時不攔截，否則 a/d/w/s 會被當成移動鍵吃掉
+            const t = e.target;
+            if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
             const k = KEYMAP[e.key];
             if (!k) return;
             keys[k] = true;
