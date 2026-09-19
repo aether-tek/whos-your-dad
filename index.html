@@ -2306,7 +2306,9 @@
                     `<div class="ppd-name">台灣 · 寶島終極決賽</div>` +
                     `<div class="ppd-row"><b>⭐ 特色：</b>${TAIWAN.tip}</div>` +
                     `<div class="ppd-row"><b>✨ 隱藏玩法：</b>${TAIWAN.tip2}</div>` +
-                    `<button id="tw-enter" class="small-btn go" style="margin-top:12px">🇹🇼 進入寶島</button>`;
+                    `<div style="margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">` +
+                    `<button id="tw-photo" class="small-btn">🔍 放大照片</button>` +
+                    `<button id="tw-enter" class="small-btn go">🇹🇼 進入寶島</button></div>`;
                 pd.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.25)), url('${TAIWAN.img}${AV}')`;
                 pd.style.backgroundSize = 'cover'; pd.style.backgroundPosition = 'center 20%';
             } else {
@@ -2327,6 +2329,8 @@
                     document.getElementById('passport-screen').style.display = 'none';
                     newTaiwan();
                 });
+                const p = document.getElementById('tw-photo');
+                if (p) p.addEventListener('click', () => openPhoto(TAIWAN.img + AV));
             }
         }
         document.getElementById('pp-detail').addEventListener('click', (e) => {
