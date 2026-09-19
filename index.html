@@ -1868,7 +1868,7 @@
         // 世界排行狀態（提前宣告，避免主頁卡片在載入時讀取 LB 發生 TDZ）
         let LB = { db: null, uid: null, cache: [], onchange: null };
         // 測試員：用這個名字進場 → 全解鎖、可單關試玩、成績不上傳
-        const TESTER_NAME = 'devqa7';   // 測試員專用名稱（英文、簡短、不易撞名；大小寫皆可）
+        const TESTER_NAME = 'dev';   // 測試員專用名稱（大小寫皆可）
         function isTester() { return load('wyd_player', '').toLowerCase() === TESTER_NAME; }
         // 上線世界排行：一次性清掉舊的本機紀錄，讓大家從乾淨狀態一起重新同樂
         const WYD_DATA_VER = 1;
