@@ -1972,12 +1972,11 @@
             try {
                 speechSynthesis.cancel();
                 const u = new SpeechSynthesisUtterance(text);
-                u.lang = 'zh-TW'; u.rate = 1.18; u.pitch = 0.85; u.volume = 1;
+                u.lang = 'zh-TW'; u.rate = 1.1; u.pitch = 0.4; u.volume = 1;   // 音調壓低 → 低沉男聲
                 // 盡量挑中文男聲
                 const vs = speechSynthesis.getVoices();
-                const male = vs.find(v => /zh/i.test(v.lang) && /(male|男|Yun|Kang|Liang|Wei|Google 國語（臺灣）)/i.test(v.name + v.voiceURI))
-                          || vs.find(v => /zh-TW|zh-HK|zh-CN/i.test(v.lang));
-                if (male) u.voice = male;
+                const male = vs.find(v => /zh/i.test(v.lang) && /(male|男|Yun-?jhe|Kang|Liang|Wei|Yu-shu)/i.test(v.name + ' ' + v.voiceURI));
+                if (male) u.voice = male;   // 有中文男聲才指定；否則靠低音調模擬
                 speechSynthesis.speak(u);
             } catch (e) {}
         }
@@ -2366,8 +2365,8 @@
                     newTaiwan();
                 });
                 const twSay = {};
-                twSay[TAIWAN.img]  = '立洗累考！';
-                twSay[TAIWAN.img2] = '新兵戰士洞洞么報到！';
+                twSay[TAIWAN.img]  = '立，洗累考！';
+                twSay[TAIWAN.img2] = '新兵戰士洞洞妖報到！';
                 twSay[TAIWAN.img3] = '三百億！五百塊！';
                 card.querySelectorAll('.tw-pic').forEach(btn =>
                     btn.addEventListener('click', () => openPhoto(btn.dataset.img + AV,
