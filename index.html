@@ -1518,7 +1518,7 @@
             currency: 'NT$', time: 60, target: 2600, pill: 0.30, spawn: 210, bossMove: 240,
             speedBase: 3.0, drift: 0.6, speedMul: 0.95, junk: true, gold: 0.06, tool: 0.05,
             mech: 'taiwan', accent: '#d4002a',
-            tip: '環遊世界最後一站！台灣人生三部曲：夜市台客 → 下基地當兵 → 進台積電，60 秒硬仗',
+            tip: '環遊世界最後一站！台灣人生三部曲：夜市台客 → 下基地當兵 → 進3219，60 秒硬仗',
             tip2: '🧋珍奶救髮量、🧾發票對獎、🦨臭豆腐糊一臉；連喝 3 杯珍奶進入夜市狂歡 ×2',
             lang: 'zh-TW', souvenir: ['🧋', '珍奶'],
             lines: { intro: ['歡迎回到台灣！', '歡迎回家'], clear: ['寶島通關，你最棒！', '通關'], fail: ['再拚一次啦！', '再來一次'] }
@@ -1743,7 +1743,7 @@
             const lv = curLv();
             if (n === 1) { container.style.backgroundImage = `url('${lv.img}${AV}')`; setWind(0); showHud('🌃 第一幕 · 夜市台客！機車瀑布開跑', 1800, '#ffd54a'); }
             else if (n === 2) { container.style.backgroundImage = `url('${(lv.img2 || lv.img)}${AV}')`; showHud('🎖️ 第二幕 · 下基地！震撼教育強風暴雨', 2000, '#4e7a3a'); }
-            else { container.style.backgroundImage = `url('${(lv.img3 || lv.img)}${AV}')`; setWind(0); showHud('🏭 第三幕 · 進台積電！晶圓金鈔雨', 2000, '#1e88e5'); }
+            else { container.style.backgroundImage = `url('${(lv.img3 || lv.img)}${AV}')`; setWind(0); showHud('🏭 第三幕 · 進3219！晶圓金鈔雨', 2000, '#1e88e5'); }
         }
         // 拉斯維加斯：接滿 5 張錢就拉一次霸
         function slotTick() {
@@ -2327,7 +2327,7 @@
                     `<div style="margin-top:4px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap">` +
                     `<button class="small-btn tw-pic" data-img="${TAIWAN.img}">🌃 夜市</button>` +
                     `<button class="small-btn tw-pic" data-img="${TAIWAN.img2}">🎖️ 當兵</button>` +
-                    `<button class="small-btn tw-pic" data-img="${TAIWAN.img3}">🏭 台積電</button>` +
+                    `<button class="small-btn tw-pic" data-img="${TAIWAN.img3}">🏭 3219</button>` +
                     `</div>` +
                     `<button id="tw-enter" class="small-btn go" style="margin-top:10px">🇹🇼 進入寶島</button>`;
                 pd.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.25)), url('${TAIWAN.img}${AV}')`;
