@@ -1033,7 +1033,7 @@
                 <button id="passport-btn" class="small-btn">🛂 護照 0/6</button>
             </div>
             <div class="btn-row">
-                <button id="world-btn" class="small-btn go">🌐 世界排行</button>
+                <button id="world-btn" class="small-btn go">🏆 排行榜</button>
             </div>
             <div id="start-board" class="board"></div>
         </div>
@@ -1076,11 +1076,7 @@
 
         <!-- 世界排行（Firebase 共用）-->
         <div id="world-screen">
-            <h2>🌐 世界排行</h2>
-            <div id="world-name-row">
-                你的名字：<input id="world-name" maxlength="20" placeholder="輸入名字">
-                <button id="world-name-save" class="small-btn">儲存</button>
-            </div>
+            <h2>🏆 排行榜</h2>
             <div id="world-status"></div>
             <div id="world-tabs">
                 <button class="wtab" data-tab="ach">🏆 成就</button>
@@ -4023,7 +4019,6 @@
                 `<div class="wl-row ${it.name === me ? 'me' : ''}"><span class="wl-rank">${i + 1}</span><span class="wl-name">${esc(it.name)}</span><span class="wl-val">${it.val}</span></div>`).join('');
         }
         function openWorld() {
-            document.getElementById('world-name').value = load('wyd_player', '');
             document.getElementById('world-level-sel').innerHTML =
                 LEVEL_INDEX.map(l => `<option value="${l.key}">${l.flag} ${l.label}</option>`).join('');
             setWorldTab(worldTab);
@@ -4032,11 +4027,6 @@
         }
         document.getElementById('world-btn').addEventListener('click', openWorld);
         document.getElementById('world-close').addEventListener('click', () => document.getElementById('world-screen').style.display = 'none');
-        document.getElementById('world-name-save').addEventListener('click', () => {
-            const v = document.getElementById('world-name').value.trim().slice(0, 20);
-            if (!v) { toast('請先輸入名字'); return; }
-            save('wyd_player', v); lbSync(); updateWorldStatus(); renderWorld(); toast('名字已設定：' + v);
-        });
         document.querySelectorAll('.wtab').forEach(b => b.addEventListener('click', () => setWorldTab(b.dataset.tab)));
         document.getElementById('world-level-sel').addEventListener('change', renderWorld);
         LB.onchange = () => {
