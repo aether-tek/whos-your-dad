@@ -594,6 +594,7 @@
             border: 3px solid #f1c40f;
             box-shadow: 0 4px 16px rgba(0,0,0,0.6);
             margin-bottom: 6px;
+            cursor: zoom-in;
         }
         #passport-screen {
             position: absolute;
@@ -2294,6 +2295,11 @@
         }
         document.getElementById('photo-zoom').addEventListener('click', () => {
             document.getElementById('photo-zoom').style.display = 'none';
+        });
+        // 關卡開場的預覽照也能點擊放大
+        document.getElementById('level-img').addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (e.currentTarget.src) openPhoto(e.currentTarget.src);
         });
         // 台灣大魔王入口：鎖著顯示大問號＋解鎖條件；解鎖後可直接進入
         function showTaiwanGate() {
