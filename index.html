@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Who's Your Dad? 接爹地的小費</title>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <style>
         body {
             margin: 0;
@@ -590,6 +592,31 @@
         #sports-screen .pp-grid { grid-template-columns: repeat(3, 1fr); }
         #sports-screen .pp-item { cursor: pointer; }
         .sp-btn-row { display: flex; gap: 10px; margin-top: 14px; }
+        /* 世界排行 */
+        #world-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.93); display: none; flex-direction: column;
+            align-items: center; z-index: 23; padding: 12px; box-sizing: border-box; overflow-y: auto;
+        }
+        #world-screen h2 { margin: 0 0 8px; font-size: 18px; color: #4ea1ff; }
+        #world-name-row { font-size: 13px; color: #ecf0f1; margin-bottom: 6px; }
+        #world-name { width: 120px; padding: 4px 6px; border-radius: 6px; border: 1px solid #555;
+            background: #1c2833; color: #fff; font-size: 13px; }
+        #world-status { font-size: 11px; color: #95a5a6; margin-bottom: 8px; min-height: 14px; }
+        #world-tabs { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; justify-content: center; }
+        .wtab { background: rgba(255,255,255,0.1); border: 1px solid #555; color: #ecf0f1;
+            border-radius: 14px; padding: 5px 10px; font-size: 13px; cursor: pointer; }
+        .wtab.on { background: #4ea1ff; border-color: #4ea1ff; color: #fff; font-weight: bold; }
+        #world-level-sel { margin-bottom: 8px; padding: 5px 8px; border-radius: 6px;
+            background: #1c2833; color: #fff; border: 1px solid #555; max-width: 90%; }
+        #world-board { width: 100%; max-width: 340px; }
+        #world-board .wl-row { display: flex; justify-content: space-between; gap: 8px;
+            padding: 6px 8px; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 14px; color: #ecf0f1; }
+        #world-board .wl-row.me { background: rgba(78,161,255,0.18); border-radius: 6px; }
+        #world-board .wl-rank { width: 26px; color: #f1c40f; font-weight: bold; }
+        #world-board .wl-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #world-board .wl-val { font-weight: bold; }
+        #world-board .wl-empty { color: #7f8c8d; font-size: 13px; padding: 12px; text-align: center; }
         .small-btn.go { background: #e67e22; border-color: #e67e22; color: #fff; font-weight: bold; }
         /* 換國飛行轉場 */
         #flight-screen {
@@ -969,6 +996,9 @@
                 <button id="ach-btn" class="small-btn">🏆 成就 0/12</button>
                 <button id="passport-btn" class="small-btn">🛂 護照 0/6</button>
             </div>
+            <div class="btn-row">
+                <button id="world-btn" class="small-btn go">🌐 世界排行</button>
+            </div>
             <div id="start-board" class="board"></div>
         </div>
 
@@ -1006,6 +1036,25 @@
                 <button id="sports-start" class="small-btn go">🏆 開始運動會</button>
                 <button id="sports-close" class="small-btn">返回</button>
             </div>
+        </div>
+
+        <!-- 世界排行（Firebase 共用）-->
+        <div id="world-screen">
+            <h2>🌐 世界排行</h2>
+            <div id="world-name-row">
+                你的名字：<input id="world-name" maxlength="20" placeholder="輸入名字">
+                <button id="world-name-save" class="small-btn">儲存</button>
+            </div>
+            <div id="world-status"></div>
+            <div id="world-tabs">
+                <button class="wtab" data-tab="ach">🏆 成就</button>
+                <button class="wtab" data-tab="passport">🛂 護照</button>
+                <button class="wtab" data-tab="level">🎯 每關</button>
+                <button class="wtab" data-tab="pill">💊 黑榜</button>
+            </div>
+            <select id="world-level-sel" style="display:none"></select>
+            <div id="world-board" class="board"></div>
+            <button id="world-close" class="small-btn">返回</button>
         </div>
 
         <!-- 換國飛行轉場 -->
@@ -2062,6 +2111,7 @@
                 const c = COUNTRIES.find(x => x.id === id);
                 toast(`🛂 護照蓋章：${c.flag} ${c.country}`);
                 renderPassportBtn();
+                lbSync();
             }
             if (passportCount() >= COUNTRIES.length) unlock('passport');
             if (passport.us && passport.mc && passport.mo) unlock('highroller');
@@ -2075,6 +2125,7 @@
                 souvenirs[c.id] = true;
                 save('wyd_souvenirs', souvenirs);
                 toast(`🎁 特產入袋：${c.souvenir[0]} ${c.country}${c.souvenir[1]}`);
+                lbSync();
             }
             if (souvenirCount() >= COUNTRIES.length) unlock('souvenirs');
             return first;
@@ -2177,6 +2228,9 @@
         let achUnlocked = load('wyd_ach', {});
         let runAch = [];              // 本場新解鎖的成就
         let pillsThisLevel = 0;       // 本關吃到的藥盒數（含巨型）
+        let pillsThisRun = 0;         // 本趟（整場）吃到的藥盒數（適尿通黑榜用）
+        let levelBest = load('wyd_levelbest', {});   // 各關個人最佳小費 { key: score }
+        let pillMax = load('wyd_pillmax', 0);        // 單趟吃最多藥盒的紀錄
         let goldThisRun = 0;
         let dodgesThisRun = 0;
 
@@ -2190,6 +2244,7 @@
             toast(`🏆 成就解鎖：${a.icon} ${a.name}`);
             sfx.ach();
             renderAchBtn();
+            lbSync();
         }
         const achBtn = document.getElementById('ach-btn');
         function renderAchBtn() { achBtn.innerText = `🏆 成就 ${achCount()}/${ACH.length}`; }
@@ -2715,6 +2770,13 @@
         function endLevel() {
             stopLevel();
             const lv = curLevels()[levelIdx];
+            // 排行榜：記錄本關個人最佳小費、單趟吃藥最多，並同步到雲端
+            if (!endless) {
+                const key = trip ? lv.id : ('s' + levelIdx);
+                if (score > (levelBest[key] || 0)) { levelBest[key] = score; save('wyd_levelbest', levelBest); }
+            }
+            if (pillsThisRun > pillMax) { pillMax = pillsThisRun; save('wyd_pillmax', pillMax); }
+            lbSync();
             if (raw >= lv.target) {
                 bank += score;
                 sfx.clear();
@@ -2843,6 +2905,8 @@
 
         function finish(reason) {
             stopLevel();
+            if (pillsThisRun > pillMax) { pillMax = pillsThisRun; save('wyd_pillmax', pillMax); }
+            lbSync();
             const h2 = gameOverScreen.querySelector('h2');
             const total = bank + (reason === 'clear' || reason === 'tripclear' ? 0 : score);
             const mode = endless ? 'endless' : trip ? 'trip' : 'story';
@@ -3111,7 +3175,7 @@
                     r.right  >= b.left && r.left <= b.right) {
                     // 命中：扣分 + combo歸零 + 髮量 +2
                     score -= 50; raw = Math.max(0, raw - 50);
-                    pillsThisLevel++;
+                    pillsThisLevel++; pillsThisRun++;
                     if (combo >= 3) popText(basketX - 10, basketY - 40, `連擊 ×${combo} 斷了`, '#e74c3c');
                     resetCombo();
                     sfx.pill();
@@ -3404,7 +3468,7 @@
                     if (type === 'pill') {
                         const pc = lv.pillCost || 50;              // 烏克蘭：藥盒扣 100
                         score -= pc; raw = Math.max(0, raw - pc);
-                        pillsThisLevel++;
+                        pillsThisLevel++; pillsThisRun++;
                         if (combo >= 3) popText(px - 10, py - 18, `連擊 ×${combo} 斷了`, '#e74c3c');
                         resetCombo();
                         sfx.pill();
@@ -3574,7 +3638,7 @@
         // ===== 按鈕 =====
         function resetRun() {
             levelIdx = 0; bank = 0; score = 0; hairLevel = 0; elapsed = 0;
-            runAch = []; goldThisRun = 0; dodgesThisRun = 0; pillsThisLevel = 0;
+            runAch = []; goldThisRun = 0; dodgesThisRun = 0; pillsThisLevel = 0; pillsThisRun = 0;
             lives = START_LIVES; lostLifeThisRun = false; tripStop = 0;
         }
         function newGame() {
@@ -3658,6 +3722,97 @@
                 } else showLevelIntro();
             } else startLevel();
         });
+
+        // ===== 世界排行（Firebase Firestore 共用）=====
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyDKI18aFYg38ACJw_e8U4UfECyC_jOj4nc",
+            authDomain: "whos-your-dad.firebaseapp.com",
+            projectId: "whos-your-dad",
+            storageBucket: "whos-your-dad.firebasestorage.app",
+            messagingSenderId: "305715106535",
+            appId: "1:305715106535:web:a60d032d4bededfcd2c842"
+        };
+        // 所有關卡索引（故事 + 各國 + 運動），供「每關」榜下拉選單用
+        const LEVEL_INDEX = [];
+        LEVELS.forEach((l, i) => LEVEL_INDEX.push({ key: 's' + i, label: '故事 · ' + l.name.split('·').pop().trim(), flag: '🏢' }));
+        COUNTRIES.forEach(c => LEVEL_INDEX.push({ key: c.id, label: c.country + ' · ' + c.name.split('·').pop().trim(), flag: c.flag }));
+        SPORTS.forEach(s => LEVEL_INDEX.push({ key: s.id, label: s.country + ' · ' + s.name, flag: s.flag }));
+
+        const LB = { db: null, uid: null, cache: [], onchange: null };
+        function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+        function lbInit() {
+            if (!window.firebase || !FIREBASE_CONFIG.apiKey) return;
+            try {
+                firebase.initializeApp(FIREBASE_CONFIG);
+                LB.db = firebase.firestore();
+                LB.uid = load('wyd_uid', null);
+                if (!LB.uid) { LB.uid = 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); save('wyd_uid', LB.uid); }
+                LB.db.collection('players').onSnapshot(snap => {
+                    LB.cache = snap.docs.map(d => d.data());
+                    if (LB.onchange) LB.onchange();
+                }, err => console.warn('LB snapshot', err));
+                lbSync();
+            } catch (e) { console.warn('LB init', e); }
+        }
+        function lbSync() {
+            if (!LB.db || !LB.uid) return;
+            const name = load('wyd_player', '');
+            if (!name) return;   // 還沒設名字就先不上榜
+            LB.db.collection('players').doc(LB.uid).set({
+                name: String(name).slice(0, 20),
+                ach: achCount(), passport: passportCount(), souvenirs: souvenirCount(),
+                pillmax: pillMax, levels: levelBest || {}, updated: Date.now()
+            }, { merge: true }).catch(e => console.warn('LB sync', e));
+        }
+        let worldTab = 'ach';
+        function updateWorldStatus() {
+            const s = document.getElementById('world-status');
+            if (!LB.db) s.innerText = '⚠️ 尚未連上雲端（本機模式）';
+            else if (!load('wyd_player', '')) s.innerText = '先在上面輸入名字並儲存，才會出現在榜上';
+            else s.innerText = '已連線 · 你是「' + load('wyd_player', '') + '」';
+        }
+        function setWorldTab(tab) {
+            worldTab = tab;
+            document.querySelectorAll('.wtab').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+            document.getElementById('world-level-sel').style.display = tab === 'level' ? 'block' : 'none';
+            renderWorld();
+        }
+        function renderWorld() {
+            const el = document.getElementById('world-board');
+            const rows = LB.cache.slice();
+            let items = [];
+            if (worldTab === 'ach') items = rows.map(r => ({ name: r.name, val: (r.ach || 0) + ' / ' + ACH.length, sort: r.ach || 0 }));
+            else if (worldTab === 'passport') items = rows.map(r => ({ name: r.name, val: (r.passport || 0) + ' 國 · ' + (r.souvenirs || 0) + ' 特產', sort: (r.passport || 0) * 1000 + (r.souvenirs || 0) }));
+            else if (worldTab === 'pill') items = rows.map(r => ({ name: r.name, val: '💊 ' + (r.pillmax || 0), sort: r.pillmax || 0 }));
+            else {
+                const key = document.getElementById('world-level-sel').value;
+                items = rows.filter(r => r.levels && r.levels[key] != null).map(r => ({ name: r.name, val: fmtMoney(r.levels[key]), sort: r.levels[key] }));
+            }
+            items = items.filter(it => it.name).sort((a, b) => b.sort - a.sort);
+            const me = load('wyd_player', '');
+            if (!items.length) { el.innerHTML = '<div class="wl-empty">' + (LB.db ? '還沒有人上榜' : '尚未連上雲端') + '</div>'; return; }
+            el.innerHTML = items.slice(0, 20).map((it, i) =>
+                `<div class="wl-row ${it.name === me ? 'me' : ''}"><span class="wl-rank">${i + 1}</span><span class="wl-name">${esc(it.name)}</span><span class="wl-val">${it.val}</span></div>`).join('');
+        }
+        function openWorld() {
+            document.getElementById('world-name').value = load('wyd_player', '');
+            document.getElementById('world-level-sel').innerHTML =
+                LEVEL_INDEX.map(l => `<option value="${l.key}">${l.flag} ${l.label}</option>`).join('');
+            setWorldTab(worldTab);
+            updateWorldStatus();
+            document.getElementById('world-screen').style.display = 'flex';
+        }
+        document.getElementById('world-btn').addEventListener('click', openWorld);
+        document.getElementById('world-close').addEventListener('click', () => document.getElementById('world-screen').style.display = 'none');
+        document.getElementById('world-name-save').addEventListener('click', () => {
+            const v = document.getElementById('world-name').value.trim().slice(0, 20);
+            if (!v) { toast('請先輸入名字'); return; }
+            save('wyd_player', v); lbSync(); updateWorldStatus(); renderWorld(); toast('名字已設定：' + v);
+        });
+        document.querySelectorAll('.wtab').forEach(b => b.addEventListener('click', () => setWorldTab(b.dataset.tab)));
+        document.getElementById('world-level-sel').addEventListener('change', renderWorld);
+        LB.onchange = () => { if (document.getElementById('world-screen').style.display === 'flex') renderWorld(); };
+        lbInit();
     </script>
 </body>
 </html>
