@@ -2286,16 +2286,16 @@
             if (isTester()) {   // 測試員：點國家直接單關試玩
                 document.getElementById('passport-screen').style.display = 'none';
                 newSingle(c);
-            } else {            // 一般：照片放滿 + 播當地話
-                openPhoto(c.img + AV);
-                playVoice(c.id, 'intro', c.lines.intro[0], c.lang);
+            } else {            // 一般：照片放滿 + 每次都播當地話
+                openPhoto(c.img + AV, () => playVoice(c.id, 'intro', c.lines.intro[0], c.lang));
             }
         });
         // 預覽照片放滿 / 恢復
-        function openPhoto(src) {
+        function openPhoto(src, voiceFn) {
             document.getElementById('photo-zoom-img').src = src;
             document.getElementById('photo-zoom-bg').style.backgroundImage = `url('${src}')`;
             document.getElementById('photo-zoom').style.display = 'block';
+            if (voiceFn) voiceFn();   // 每次放大都重播一次語音
         }
         document.getElementById('photo-zoom').addEventListener('click', () => {
             document.getElementById('photo-zoom').style.display = 'none';
@@ -2303,7 +2303,9 @@
         // 關卡開場的預覽照也能點擊放大
         document.getElementById('level-img').addEventListener('click', (e) => {
             e.stopPropagation();
-            if (e.currentTarget.src) openPhoto(e.currentTarget.src);
+            if (!e.currentTarget.src) return;
+            const lv = curLv();
+            openPhoto(e.currentTarget.src, () => { if (lv && lv.lines) playVoice(lv.id, 'intro', lv.lines.intro[0], lv.lang); });
         });
         // 台灣大魔王入口：鎖著顯示大問號＋解鎖條件；解鎖後可直接進入
         function showTaiwanGate() {
@@ -2344,7 +2346,8 @@
                     newTaiwan();
                 });
                 card.querySelectorAll('.tw-pic').forEach(btn =>
-                    btn.addEventListener('click', () => openPhoto(btn.dataset.img + AV)));
+                    btn.addEventListener('click', () => openPhoto(btn.dataset.img + AV,
+                        () => playVoice('tw', 'intro', TAIWAN.lines.intro[0], TAIWAN.lang))));
             }
         }
         document.getElementById('pp-detail').addEventListener('click', (e) => {
@@ -2391,7 +2394,7 @@
             const s = SPORTS.find(x => x.id === item.dataset.id);
             if (!s) return;
             if (isTester()) { document.getElementById('sports-screen').style.display = 'none'; newSingle(s); }
-            else { openPhoto(s.img + AV); playBroadcast(s); }
+            else { openPhoto(s.img + AV, () => playBroadcast(s)); }
         });
         document.getElementById('sports-close').addEventListener('click', () => {
             document.getElementById('sports-screen').style.display = 'none';
