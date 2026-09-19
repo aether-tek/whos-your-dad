@@ -195,6 +195,8 @@
             padding: 5px 12px; font-size: 13px; cursor: pointer;
         }
         .home-btn:hover { background: rgba(0,0,0,0.8); }
+        .home-btn.back-btn { left: auto; right: 10px; }
+        .nav-row { display: flex; gap: 10px; justify-content: center; }
         /* 強制命名畫面 */
         #name-gate {
             position: absolute; inset: 0; z-index: 60; display: none;
@@ -1064,14 +1066,14 @@
                 <span style="color:#e74c3c;font-weight:bold">☠️ 命用完 → 結束</span><br>
                 🌍 出差每國有專屬玩法、音樂、特產與一句當地話；護照集滿 20 國與 20 特產
             </p>
-            <button id="help-close" class="small-btn">返回</button>
+            <div class="nav-row"><button id="help-close" class="small-btn">← 上一頁</button><button class="small-btn nav-home">🏠 主畫面</button></div>
         </div>
 
         <!-- 護照畫面 -->
         <div id="passport-screen">
             <h2>🛂 爹地的護照</h2>
             <div id="pp-grid" class="pp-grid"></div>
-            <button id="passport-close" class="small-btn">返回</button>
+            <div class="nav-row"><button id="passport-close" class="small-btn">← 上一頁</button><button class="small-btn nav-home">🏠 主畫面</button></div>
         </div>
         <!-- 點某國跳出的玩法說明（放在遊戲區層級，永遠置中、不隨護照捲動） -->
         <div id="pp-detail"><div class="ppd-card" id="ppd-card"></div></div>
@@ -1084,7 +1086,8 @@
             <div id="sp-grid" class="pp-grid"></div>
             <div class="sp-btn-row">
                 <button id="sports-start" class="small-btn go">🏆 開始運動會</button>
-                <button id="sports-close" class="small-btn">返回</button>
+                <button id="sports-close" class="small-btn">← 上一頁</button>
+                <button class="small-btn nav-home">🏠 主畫面</button>
             </div>
         </div>
 
@@ -1100,7 +1103,7 @@
             </div>
             <select id="world-level-sel" style="display:none"></select>
             <div id="world-board" class="board"></div>
-            <button id="world-close" class="small-btn">返回</button>
+            <div class="nav-row"><button id="world-close" class="small-btn">← 上一頁</button><button class="small-btn nav-home">🏠 主畫面</button></div>
         </div>
 
         <!-- 強制命名（首次進入才會出現，連動雲端排行）-->
@@ -1147,12 +1150,13 @@
         <div id="ach-screen">
             <h2>🏆 成就</h2>
             <div id="ach-list" class="ach-list"></div>
-            <button id="ach-close" class="small-btn">返回</button>
+            <div class="nav-row"><button id="ach-close" class="small-btn">← 上一頁</button><button class="small-btn nav-home">🏠 主畫面</button></div>
         </div>
 
         <!-- 關卡畫面（開場／過關／失敗共用） -->
         <div id="level-screen">
             <button class="home-btn" id="level-home">🏠 主畫面</button>
+            <button class="home-btn back-btn" id="level-back">← 上一頁</button>
             <img id="level-img" src="" alt="">
             <h2 id="level-title">關卡一 · 試用期</h2>
             <p id="level-body" class="instructions"></p>
@@ -1171,6 +1175,7 @@
         <!-- 結束畫面 -->
         <div id="game-over-screen">
             <button class="home-btn" id="over-home">🏠 主畫面</button>
+            <button class="home-btn back-btn" id="over-back">← 上一頁</button>
             <h2>遊戲結束！</h2>
             <p id="final-score" style="font-size: 24px; color: #f1c40f; margin: 6px 0"></p>
             <div id="run-ach" title="本場解鎖的成就"></div>
@@ -3982,6 +3987,15 @@
         });
         document.getElementById('level-home').addEventListener('click', returnToMenu);
         document.getElementById('over-home').addEventListener('click', returnToMenu);
+        // 每個非遊戲畫面的「🏠 主畫面」都回主頁
+        document.querySelectorAll('.nav-home').forEach(b => b.addEventListener('click', returnToMenu));
+        // 「← 上一頁」：台灣／單關試玩來自護照 → 回護照；其餘 → 回主畫面
+        function levelBack() {
+            returnToMenu();
+            if (taiwanRun || singleRun) { renderPassport(); document.getElementById('passport-screen').style.display = 'flex'; }
+        }
+        document.getElementById('level-back').addEventListener('click', levelBack);
+        document.getElementById('over-back').addEventListener('click', returnToMenu);
         levelBtn.addEventListener('click', () => {
             if (levelBtn.dataset.action === 'intro') {
                 if (flightFrom && flightTo) {
