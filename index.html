@@ -1966,6 +1966,21 @@
                 if (p && p.catch) p.catch(sayHype);
             } catch (e) { sayHype(); }
         }
+        // 高亢有力的男聲播報（TTS：偏低沉的男聲、語速快、音量滿、略帶氣勢）
+        function hypeSay(text) {
+            if (sfxMuted || !text || !window.speechSynthesis) return;
+            try {
+                speechSynthesis.cancel();
+                const u = new SpeechSynthesisUtterance(text);
+                u.lang = 'zh-TW'; u.rate = 1.18; u.pitch = 0.85; u.volume = 1;
+                // 盡量挑中文男聲
+                const vs = speechSynthesis.getVoices();
+                const male = vs.find(v => /zh/i.test(v.lang) && /(male|男|Yun|Kang|Liang|Wei|Google 國語（臺灣）)/i.test(v.name + v.voiceURI))
+                          || vs.find(v => /zh-TW|zh-HK|zh-CN/i.test(v.lang));
+                if (male) u.voice = male;
+                speechSynthesis.speak(u);
+            } catch (e) {}
+        }
         function ensureAudio() {
             if (!audioCtx) {
                 try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
@@ -2351,12 +2366,12 @@
                     newTaiwan();
                 });
                 const twSay = {};
-                twSay[TAIWAN.img]  = '夜市走一波，呷飽沒！';
-                twSay[TAIWAN.img2] = '報告班長！下基地震撼教育！';
-                twSay[TAIWAN.img3] = '進無塵室，晶圓衝一波！';
+                twSay[TAIWAN.img]  = '立洗累考！';
+                twSay[TAIWAN.img2] = '新兵戰士洞洞么報到！';
+                twSay[TAIWAN.img3] = '三百億！五百塊！';
                 card.querySelectorAll('.tw-pic').forEach(btn =>
                     btn.addEventListener('click', () => openPhoto(btn.dataset.img + AV,
-                        () => say(twSay[btn.dataset.img] || TAIWAN.lines.intro[0], 'zh-TW'))));
+                        () => hypeSay(twSay[btn.dataset.img] || TAIWAN.lines.intro[0]))));
             }
         }
         document.getElementById('pp-detail').addEventListener('click', (e) => {
