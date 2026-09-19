@@ -904,11 +904,9 @@
         /* 預覽照片放滿的燈箱 */
         #photo-zoom {
             position: absolute; inset: 0; z-index: 46; display: none;
-            align-items: center; justify-content: center; background: rgba(0,0,0,0.92);
-            cursor: zoom-out; padding: 8px; box-sizing: border-box;
+            background: #000; cursor: zoom-out;
         }
-        #photo-zoom img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.7); }
+        #photo-zoom img { width: 100%; height: 100%; object-fit: cover; display: block; }
         /* 台灣大魔王神秘卡 */
         .taiwan-tile .tw-mystery {
             width: 100%; height: 72px; border-radius: 8px;
