@@ -1548,13 +1548,19 @@
 
         const TRIP_STOPS = 3;          // 已不再限制站數，保留常數避免其他引用出錯
         let tripStop = 0;              // 本趟出差累計到第幾站（跨越洗牌）
-        // 前往下一站；一輪 20 國跑完就重新洗牌繼續，直到命用完
+        // 從「還沒蓋護照章」的國家裡隨機挑一個；全蓋滿了才允許重複
+        function pickTripCountry(excludeId) {
+            let pool = COUNTRIES.filter(c => !passport[c.id] && c.id !== excludeId);
+            if (!pool.length) pool = COUNTRIES.filter(c => c.id !== excludeId);
+            if (!pool.length) pool = COUNTRIES.slice();
+            return pool[Math.floor(Math.random() * pool.length)];
+        }
+        // 前往下一站。固定串連（賭城／運動會／台灣／單關）照原順序；世界出差只抽未過關的國家
         function advanceTrip() {
+            if (finiteTour()) { levelIdx++; tripStop++; return; }
+            const cur = tripLevels[levelIdx];
+            tripLevels.push(pickTripCountry(cur && cur.id));
             levelIdx++;
-            if (levelIdx >= tripLevels.length) {
-                tripLevels = COUNTRIES.slice().sort(() => Math.random() - 0.5);
-                levelIdx = 0;
-            }
             tripStop++;
         }
         // ===== 換國飛行轉場（世界出差 / 賭城之旅）=====
@@ -2302,10 +2308,10 @@
             if (item.dataset.id === '__tw__') { showTaiwanGate(); return; }
             const c = COUNTRIES.find(x => x.id === item.dataset.id);
             if (!c) return;
-            if (isTester()) {   // 測試員：點國家直接單關試玩
+            if (isTester() || passport[c.id]) {   // 測試員、或已過關的國家：直接重玩這關
                 document.getElementById('passport-screen').style.display = 'none';
                 newSingle(c);
-            } else {            // 一般：照片放滿 + 每次都播當地話
+            } else {            // 還沒過關：只放大看照片 + 播當地話
                 openPhoto(c.img + AV, () => playVoice(c.id, 'intro', c.lines.intro[0], c.lang));
             }
         });
@@ -3170,7 +3176,7 @@
             if (total >= 50000) unlock('rich50');
 
             if (reason === 'tripclear') {
-                h2.innerText = singleRun ? '🧪 測試完成' : taiwanRun ? '🇹🇼 寶島通關！環遊世界回到家' : sportsDay ? '🏆 運動會閉幕！' : casinoTour ? '🎰 賭城之旅圓滿！' : '🛂 出差圓滿！';
+                h2.innerText = singleRun ? '✅ 這關結束' : taiwanRun ? '🇹🇼 寶島通關！環遊世界回到家' : sportsDay ? '🏆 運動會閉幕！' : casinoTour ? '🎰 賭城之旅圓滿！' : '🛂 出差圓滿！';
                 const flags = tripLevels.map(l => l.flag).join(' ');
                 const last = tripLevels[tripLevels.length - 1];
                 finalScore.innerHTML =
@@ -3927,7 +3933,7 @@
             ensureAudio();
             endless = false; trip = true; casinoTour = false; sportsDay = false; taiwanRun = false; singleRun = false;
             resetRun();
-            tripLevels = COUNTRIES.slice().sort(() => Math.random() - 0.5);   // 全部國家隨機排序
+            tripLevels = [pickTripCountry()];   // 從還沒蓋章的國家開始
             tripStop = 1;
             showLevelIntro();
         }
