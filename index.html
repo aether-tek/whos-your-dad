@@ -2826,11 +2826,13 @@
         });
 
         // 每幀讀一次按鍵狀態移動錢包；沒按鍵時什麼都不做，滑鼠/觸控仍是直接定位
-        function keyLoop() {
+        let lastTk = performance.now();
+        function keyLoop(now) {
+            const dt = Math.min(3, Math.max(0, ((now || performance.now()) - lastTk) / 16.667)); lastTk = now || performance.now();
             if (isPlaying) {
                 const dx = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
                 const dy = (keys.down  ? 1 : 0) - (keys.up   ? 1 : 0);
-                if (dx || dy) moveBasket(basketX + dx * KEY_SPEED, basketY + dy * KEY_SPEED);
+                if (dx || dy) moveBasket(basketX + dx * KEY_SPEED * dt, basketY + dy * KEY_SPEED * dt);
             }
             requestAnimationFrame(keyLoop);
         }
@@ -3398,14 +3400,16 @@
             item.style.left = megaX + 'px';
             container.appendChild(item);
 
-            function sweep() {
+            let lastTm = performance.now();
+            function sweep(now) {
                 if (!isPlaying) { item.remove(); megaCooldown = false; return; }
-                if (paused) { requestAnimationFrame(sweep); return; }
-                topPos += speed;
+                if (paused) { lastTm = now || performance.now(); requestAnimationFrame(sweep); return; }
+                const dt = Math.min(3, Math.max(0, ((now || performance.now()) - lastTm) / 16.667)); lastTm = now || performance.now();
+                topPos += speed * dt;
                 item.style.top = topPos + 'px';
                 // 左右搖擺，碰牆反彈
                 if (megaDrift !== 0) {
-                    megaX += megaDrift;
+                    megaX += megaDrift * dt;
                     if (megaX < 0) { megaX = 0; megaDrift = -megaDrift; }
                     else if (megaX + pw > containerWidth) { megaX = containerWidth - pw; megaDrift = -megaDrift; }
                     item.style.left = megaX + 'px';
@@ -3646,22 +3650,25 @@
             let baseX = x;                         // 中心線（迴力鏢會重設）
             const sineAmp = 60 + Math.random() * 30;
             const sinePhase = Math.random() * Math.PI * 2;
-            let stretched = false, stretchLeft = 0;   // 土耳其：被收回去的幀數
+            let stretched = false, stretchLeft = 0;   // 土耳其：被收回去的時間（幀數等值）
             let spun = false;                          // 義大利：是否已轉滿一圈
+            let lastT = performance.now();             // delta-time：讓速度不隨手機更新率浮動
 
-            function fall() {
+            function fall(now) {
                 if (!isPlaying) { item.remove(); return; }
-                if (paused) { requestAnimationFrame(fall); return; }
-                if (frozen) { requestAnimationFrame(fall); return; }   // 西班牙：午睡，全部停住
+                if (paused) { lastT = now || performance.now(); requestAnimationFrame(fall); return; }
+                if (frozen) { lastT = now || performance.now(); requestAnimationFrame(fall); return; }   // 西班牙：午睡，全部停住
+                // 這一影格相當於幾個「60fps 標準影格」，夾在 0~3 之間避免切到背景後爆衝
+                const dt = Math.min(3, Math.max(0, ((now || performance.now()) - lastT) / 16.667)); lastT = now || performance.now();
                 if (lv.mech === 'hoops') {
                     // 籃球：重力加速 + 落地彈起一次
-                    vy += 0.4;
-                    topPos += vy;
+                    vy += 0.4 * dt;
+                    topPos += vy * dt;
                     if (!bounced && topPos >= bounceFloor) {
                         topPos = bounceFloor; vy = -vy * 0.6; bounced = true;
                     }
                 } else {
-                    topPos += speed;
+                    topPos += speed * dt;
                 }
                 // 土耳其：鈔票掉到一半被收回去一段，再放下來
                 if (lv.mech === 'stretch' && !stretched && /^\d+$/.test(type)
@@ -3669,7 +3676,7 @@
                     stretched = true; stretchLeft = 22;
                     popText(x, topPos - 24, '🍦 收回！', '#f5b7b1');
                 }
-                if (stretchLeft > 0) { stretchLeft--; topPos -= speed * 1.8; }
+                if (stretchLeft > 0) { stretchLeft -= dt; topPos -= speed * 1.8 * dt; }
                 item.style.top = topPos + 'px';
                 const w = item.offsetWidth || 68;
                 if (lv.mech === 'sine' || lv.mech === 'windmill' || lv.mech === 'reggae' || lv.mech === 'rally' || lv.mech === 'freekick') {
@@ -3692,13 +3699,13 @@
                 } else if (lv.mech === 'homing' && type === 'pill') {
                     // 蒙古：藥盒朝錢包 x 追過來
                     const target = basketX + basketWidth / 2 - w / 2;
-                    x += Math.sign(target - x) * Math.min(1.4, Math.abs(target - x));
+                    x += Math.sign(target - x) * Math.min(1.4 * dt, Math.abs(target - x));
                     // 蒙古第二層：撞到牆的藥盒像騎兵折返，速度 ×1.3
                     if ((x <= 0 || x >= containerWidth - w) && !boosted) { boosted = true; speed *= 1.3; popText(x, topPos - 20, '🐎 加速！', '#e67e22'); }
                     x = Math.max(0, Math.min(containerWidth - w, x));
                     item.style.left = x + 'px';
                 } else if (drift || windX) {
-                    x += drift + windX;            // 蘇格蘭：加上風力
+                    x += (drift + windX) * dt;     // 蘇格蘭：加上風力
                     if (x < 0) { x = 0; drift = -drift; }               // 撞左牆反彈
                     else if (x > containerWidth - w) { x = containerWidth - w; drift = -drift; }
                     item.style.left = x + 'px';
