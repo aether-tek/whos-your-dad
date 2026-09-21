@@ -380,8 +380,7 @@
             background-repeat: no-repeat;
             background-position: center;
             filter: drop-shadow(0 0 6px #f1c40f) drop-shadow(0 0 12px #f39c12);
-            animation: lifeSpin 0.9s ease-in-out infinite;
-            will-change: transform;
+            will-change: transform;   /* 脈動由 JS 併進 transform，避免與 CSS 動畫打架 */
         }
         .life-item::after {
             content: '+1 命';
@@ -3626,8 +3625,11 @@
             }
 
             const bossLeft = parseFloat(boss.style.left) || 170;
-            item.style.left = (forceX != null ? forceX : (bossLeft + bossWidth / 2 - 15 + offset * 48)) + 'px';
-            item.style.top = '125px';
+            const initLeft = (forceX != null ? forceX : (bossLeft + bossWidth / 2 - 15 + offset * 48));
+            // 剪刀/刮鬍刀/特產有自己的 CSS transform 動畫 → 用 top/left；其餘用 transform 定位（陰影只畫一次）
+            const cssAnimItem = (type === 'scissors' || type === 'razor' || type === 'souvenir');
+            if (cssAnimItem) { item.style.left = initLeft + 'px'; item.style.top = '125px'; }
+            else { item.style.left = '0'; item.style.top = '0'; item.style.transform = `translate(${initLeft}px, 125px)`; }
             container.appendChild(item);
             let recycled = false, boosted = false;   // 埃及：金鈔回收過；蒙古：藥盒撞牆加速過
 
@@ -3649,7 +3651,7 @@
             speed *= paceMul();   // 四段時間節奏：越後面掉越快
             let vy = speed, bounced = false;
             const bounceFloor = 415 + Math.random() * 55;
-            let x = parseFloat(item.style.left);
+            let x = initLeft;
             let baseX = x;                         // 中心線（迴力鏢會重設）
             const sineAmp = 60 + Math.random() * 30;
             const sinePhase = Math.random() * Math.PI * 2;
@@ -3680,8 +3682,8 @@
                     popText(x, topPos - 24, '🍦 收回！', '#f5b7b1');
                 }
                 if (stretchLeft > 0) { stretchLeft -= dt; topPos -= speed * 1.8 * dt; }
-                item.style.top = topPos + 'px';
                 const w = item.offsetWidth || 68;
+                let rot = 0;   // 義大利披薩旋轉角
                 if (lv.mech === 'sine' || lv.mech === 'windmill' || lv.mech === 'reggae' || lv.mech === 'rally' || lv.mech === 'freekick') {
                     // 印度 S 形 / 荷蘭大風車 / 牙買加輕搖 / 網球大幅抽球 / 足球香蕉弧線
                     const amp = lv.mech === 'windmill' ? 95 : lv.mech === 'reggae' ? 32 : lv.mech === 'rally' ? 115
@@ -3689,16 +3691,13 @@
                     const spd = lv.mech === 'reggae' ? 70 : lv.mech === 'rally' ? 30 : lv.mech === 'freekick' ? 95 : 48;
                     x = baseX + amp * Math.sin((topPos - 125) / spd + sinePhase);
                     x = Math.max(0, Math.min(containerWidth - w, x));
-                    item.style.left = x + 'px';
                 } else if (lv.mech === 'pizza') {
                     // 義大利：邊轉邊繞小圈
                     const ang = (topPos - 125) / 26;
                     if (ang >= Math.PI * 2) spun = true;
                     x = baseX + 24 * Math.cos(ang);
                     x = Math.max(0, Math.min(containerWidth - w, x));
-                    item.style.left = x + 'px';
-                    if (type !== 'life' && type !== 'souvenir' && type !== 'scissors' && type !== 'razor')
-                        item.style.transform = `rotate(${ang}rad)`;   // 只轉錢，別蓋掉道具動畫
+                    if (!cssAnimItem) rot = ang;   // 只轉錢
                 } else if (lv.mech === 'homing' && type === 'pill') {
                     // 蒙古：藥盒朝錢包 x 追過來
                     const target = basketX + basketWidth / 2 - w / 2;
@@ -3706,12 +3705,18 @@
                     // 蒙古第二層：撞到牆的藥盒像騎兵折返，速度 ×1.3
                     if ((x <= 0 || x >= containerWidth - w) && !boosted) { boosted = true; speed *= 1.3; popText(x, topPos - 20, '🐎 加速！', '#e67e22'); }
                     x = Math.max(0, Math.min(containerWidth - w, x));
-                    item.style.left = x + 'px';
                 } else if (drift || windX) {
                     x += (drift + windX) * dt;     // 蘇格蘭：加上風力
                     if (x < 0) { x = 0; drift = -drift; }               // 撞左牆反彈
                     else if (x > containerWidth - w) { x = containerWidth - w; drift = -drift; }
+                }
+                // 套用位置：CSS 動畫物件用 top/left；其餘用 transform 搬移（加命併入脈動、披薩併入旋轉）
+                if (cssAnimItem) {
+                    item.style.top = topPos + 'px';
                     item.style.left = x + 'px';
+                } else {
+                    const sc = (type === 'life') ? (1 + 0.1 * Math.sin(lastT / 150)) : 1;
+                    item.style.transform = `translate(${x}px, ${topPos}px)` + (rot ? ` rotate(${rot}rad)` : '') + (sc !== 1 ? ` scale(${sc})` : '');
                 }
                 // 日本：偽裝的藥盒掉到一半露出真面目
                 if (disguised && topPos > 300) {
@@ -3913,7 +3918,7 @@
                     // 澳洲：漏掉的鈔票像迴力鏢彈回頂端再掉一次
                     if (lv.mech === 'boomerang' && /^\d+$/.test(type) && !recycled) {
                         recycled = true; topPos = 125; baseX = Math.random() * (containerWidth - w);
-                        x = baseX; item.style.left = x + 'px';
+                        x = baseX;   // 位置下一影格由 transform 套用
                         popText(x, 150, '🪃 迴力鏢！', '#00843d');
                         requestAnimationFrame(fall); return;
                     }
