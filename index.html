@@ -439,12 +439,7 @@
             filter: drop-shadow(0 0 14px #ff2d2d) drop-shadow(0 0 24px #c0392b);
             will-change: transform;
         }
-        /* 只用 transform 縮放脈動示警，compositor 處理、幾乎不吃效能 */
-        @keyframes megaWarn {
-            0%,100% { transform: scale(1); }
-            50%      { transform: scale(1.06); }
-        }
-        .mega-pill { animation: megaWarn 0.7s ease-in-out infinite; }
+        /* 脈動改由 JS 併進 transform（連同位移），避免 CSS 動畫與 JS transform 打架 */
 
         /* ── 接到東西時的飄字 ── */
         .pop-text {
@@ -3401,24 +3396,27 @@
 
             const item = document.createElement('div');
             item.classList.add('falling-item', 'mega-pill');   // 帶 falling-item 才會被 clearItems 清掉
-            item.style.top  = topPos + 'px';
-            item.style.left = megaX + 'px';
+            // 用 transform 定位（不用 top/left），大範圍陰影只畫一次、之後合成器搬動不重繪
+            item.style.left = '0'; item.style.top = '0';
+            item.style.transform = `translate(${megaX}px, ${topPos}px)`;
             container.appendChild(item);
 
             let lastTm = performance.now();
             function sweep(now) {
                 if (!isPlaying) { item.remove(); megaCooldown = false; return; }
                 if (paused) { lastTm = now || performance.now(); requestAnimationFrame(sweep); return; }
-                const dt = Math.min(2, Math.max(0, ((now || performance.now()) - lastTm) / 16.667)); lastTm = now || performance.now();
+                const nowMs = now || performance.now();
+                const dt = Math.min(2, Math.max(0, (nowMs - lastTm) / 16.667)); lastTm = nowMs;
                 topPos += speed * dt;
-                item.style.top = topPos + 'px';
                 // 左右搖擺，碰牆反彈
                 if (megaDrift !== 0) {
                     megaX += megaDrift * dt;
                     if (megaX < 0) { megaX = 0; megaDrift = -megaDrift; }
                     else if (megaX + pw > containerWidth) { megaX = containerWidth - pw; megaDrift = -megaDrift; }
-                    item.style.left = megaX + 'px';
                 }
+                // 位置與示警脈動都併進 transform，全程走合成器
+                const pulse = 1 + 0.05 * Math.sin(nowMs / 110);
+                item.style.transform = `translate(${megaX}px, ${topPos}px) scale(${pulse})`;
 
                 // 碰撞偵測
                 const b = basket.getBoundingClientRect();
