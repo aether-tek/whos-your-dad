@@ -380,7 +380,8 @@
             background-repeat: no-repeat;
             background-position: center;
             filter: drop-shadow(0 0 6px #f1c40f) drop-shadow(0 0 12px #f39c12);
-            animation: lifeSpin 1.2s linear infinite;
+            animation: lifeSpin 0.9s ease-in-out infinite;
+            will-change: transform;
         }
         .life-item::after {
             content: '+1 命';
@@ -393,9 +394,10 @@
             white-space: nowrap;
             text-shadow: 0 1px 3px #000, 0 0 6px #000;
         }
+        /* 縮放脈動取代 3D 旋轉：不會讓發光陰影每影格重算，手機不卡 */
         @keyframes lifeSpin {
-            0%   { transform: rotateY(0deg); }
-            100% { transform: rotateY(360deg); }
+            0%,100% { transform: scale(1); }
+            50%      { transform: scale(1.12); }
         }
         .life-ico {
             width: 16px; height: 16px;
@@ -433,13 +435,16 @@
             background-repeat: no-repeat;
             background-position: center;
             z-index: 12;
-            filter: drop-shadow(0 0 10px #e74c3c) drop-shadow(0 0 20px #c0392b);
+            /* 靜態發光（不做動畫，避免每影格重算 drop-shadow 造成手機卡頓） */
+            filter: drop-shadow(0 0 14px #ff2d2d) drop-shadow(0 0 24px #c0392b);
+            will-change: transform;
         }
+        /* 只用 transform 縮放脈動示警，compositor 處理、幾乎不吃效能 */
         @keyframes megaWarn {
-            0%,100% { filter: drop-shadow(0 0 10px #e74c3c) drop-shadow(0 0 20px #c0392b); }
-            50%      { filter: drop-shadow(0 0 20px #ff0000) drop-shadow(0 0 40px #ff6600) brightness(1.2); }
+            0%,100% { transform: scale(1); }
+            50%      { transform: scale(1.06); }
         }
-        .mega-pill { animation: megaWarn 0.6s ease-in-out infinite; }
+        .mega-pill { animation: megaWarn 0.7s ease-in-out infinite; }
 
         /* ── 接到東西時的飄字 ── */
         .pop-text {
@@ -2828,7 +2833,7 @@
         // 每幀讀一次按鍵狀態移動錢包；沒按鍵時什麼都不做，滑鼠/觸控仍是直接定位
         let lastTk = performance.now();
         function keyLoop(now) {
-            const dt = Math.min(3, Math.max(0, ((now || performance.now()) - lastTk) / 16.667)); lastTk = now || performance.now();
+            const dt = Math.min(2, Math.max(0, ((now || performance.now()) - lastTk) / 16.667)); lastTk = now || performance.now();
             if (isPlaying) {
                 const dx = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
                 const dy = (keys.down  ? 1 : 0) - (keys.up   ? 1 : 0);
@@ -3404,7 +3409,7 @@
             function sweep(now) {
                 if (!isPlaying) { item.remove(); megaCooldown = false; return; }
                 if (paused) { lastTm = now || performance.now(); requestAnimationFrame(sweep); return; }
-                const dt = Math.min(3, Math.max(0, ((now || performance.now()) - lastTm) / 16.667)); lastTm = now || performance.now();
+                const dt = Math.min(2, Math.max(0, ((now || performance.now()) - lastTm) / 16.667)); lastTm = now || performance.now();
                 topPos += speed * dt;
                 item.style.top = topPos + 'px';
                 // 左右搖擺，碰牆反彈
@@ -3659,7 +3664,7 @@
                 if (paused) { lastT = now || performance.now(); requestAnimationFrame(fall); return; }
                 if (frozen) { lastT = now || performance.now(); requestAnimationFrame(fall); return; }   // 西班牙：午睡，全部停住
                 // 這一影格相當於幾個「60fps 標準影格」，夾在 0~3 之間避免切到背景後爆衝
-                const dt = Math.min(3, Math.max(0, ((now || performance.now()) - lastT) / 16.667)); lastT = now || performance.now();
+                const dt = Math.min(2, Math.max(0, ((now || performance.now()) - lastT) / 16.667)); lastT = now || performance.now();
                 if (lv.mech === 'hoops') {
                     // 籃球：重力加速 + 落地彈起一次
                     vy += 0.4 * dt;
