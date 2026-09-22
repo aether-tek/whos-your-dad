@@ -4528,9 +4528,9 @@
                 if (!LB.uid) { LB.uid = 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); save('wyd_uid', LB.uid); }
                 LB.db.collection('players').onSnapshot(snap => {
                     LB.cache = snap.docs.map(d => d.data());
+                    LB.ready = true;   // 快照到手後才允許寫入，避免用空資料蓋掉雲端
                     if (LB.onchange) LB.onchange();
                 }, err => console.warn('LB snapshot', err));
-                lbSync();
             } catch (e) { console.warn('LB init', e); }
         }
         // 我這個名字（不分大小寫）跨所有裝置的合併最高值 = 本機現況 vs 雲端同名各筆各欄取最高
@@ -4550,7 +4550,7 @@
         }
         function lbSync() {
             if (isTester()) return;   // 測試員不上傳資料庫
-            if (!LB.db || !LB.uid) return;
+            if (!LB.db || !LB.uid || !LB.ready) return;   // 快照未到手前不寫，避免用空資料蓋掉雲端
             const name = load('wyd_player', '');
             if (!name) return;   // 還沒設名字就先不上榜
             const m = myMergedStats();
