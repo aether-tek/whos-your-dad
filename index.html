@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="app-version" content="2026-09-22.6">
+    <meta name="app-version" content="2026-09-22.7">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -2045,12 +2045,17 @@
         function playVoice(id, key, fallbackText, lang) {
             if (sfxMuted) return;
             try { if (voiceAudio) voiceAudio.pause(); } catch (e) {}
+            let fellBack = false;
+            const fallback = () => { if (fellBack) return; fellBack = true; say(fallbackText, lang); };
             try {
                 voiceAudio = new Audio(`assets/voice/${id}-${key}.mp3`);
                 voiceAudio.volume = 1;
+                // iOS Safari 對 404 的音檔常常不會讓 play() 的 promise reject，
+                // 錯誤只會從 'error' 事件冒出來，所以兩邊都要接才能穩定 fallback 到 TTS
+                voiceAudio.addEventListener('error', fallback);
                 const p = voiceAudio.play();
-                if (p && p.catch) p.catch(() => say(fallbackText, lang));
-            } catch (e) { say(fallbackText, lang); }
+                if (p && p.catch) p.catch(fallback);
+            } catch (e) { fallback(); }
         }
         function say(text, lang) {
             if (sfxMuted || !text || !window.speechSynthesis) return;
@@ -2075,12 +2080,15 @@
                     speechSynthesis.speak(u);
                 } catch (e) {}
             };
+            let fellBack = false;
+            const fallback = () => { if (fellBack) return; fellBack = true; sayHype(); };
             try {
                 bcAudio = new Audio(`assets/voice/${lv.id}-bc.mp3`);
                 bcAudio.volume = 1;
+                bcAudio.addEventListener('error', fallback);
                 const p = bcAudio.play();
-                if (p && p.catch) p.catch(sayHype);
-            } catch (e) { sayHype(); }
+                if (p && p.catch) p.catch(fallback);
+            } catch (e) { fallback(); }
         }
         // 高亢有力的男聲播報（TTS：偏低沉的男聲、語速快、音量滿、略帶氣勢）
         function hypeSay(text) {
