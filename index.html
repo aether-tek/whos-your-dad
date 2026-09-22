@@ -518,6 +518,49 @@
         #mute-btn     { left: 6px; }
         #clockout-btn { right: 6px; display: none; background: rgba(192,57,43,0.8); }
         #quit-btn { top: 86px; bottom: auto; right: 6px; display: none; background: rgba(52,73,94,0.85); z-index: 17; }
+        /* ── 商店 ── */
+        #shop-screen {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.94);
+            display: none; flex-direction: column; align-items: center; z-index: 24;
+            padding: 10px 12px; box-sizing: border-box; overflow-y: auto;
+        }
+        #shop-screen h2 { margin: 0 0 4px; font-size: 18px; }
+        .shop-coins { font-size: 14px; color: #f1c40f; font-weight: bold; margin-bottom: 4px; }
+        .shop-note { font-size: 11px; line-height: 1.4; margin-bottom: 8px; text-align: center; }
+        .shop-grid { width: 100%; display: flex; flex-direction: column; gap: 6px; }
+        .shop-item {
+            display: flex; align-items: center; gap: 10px;
+            background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 10px; padding: 6px 10px;
+        }
+        .shop-item.equipped { border-color: #2ecc71; background: rgba(46,204,113,0.15); }
+        .shop-item.perm { border-color: #f39c12; }
+        .si-icon { font-size: 26px; width: 34px; text-align: center; }
+        .si-body { flex: 1; }
+        .si-name { font-size: 14px; font-weight: bold; color: #ecf0f1; }
+        .si-desc { font-size: 11px; color: #bdc3c7; line-height: 1.3; }
+        .si-own { font-size: 11px; color: #5dade2; }
+        .si-btns { display: flex; flex-direction: column; gap: 3px; }
+        .si-btns button { margin: 0; padding: 4px 8px; font-size: 12px; border-radius: 8px; box-shadow: none; }
+        .si-buy { background: #8e44ad; }
+        .si-equip { background: #34495e; }
+        .si-equip.on { background: #2ecc71; }
+        .si-buy:disabled { background: #555; opacity: 0.6; cursor: default; }
+        /* 進行中的裝備列 */
+        #loadout-bar {
+            position: absolute; top: 86px; left: 6px;
+            display: none; flex-direction: column; gap: 3px; z-index: 16;
+        }
+        #loadout-bar .lo {
+            background: rgba(0,0,0,0.55); border-radius: 10px; padding: 2px 8px;
+            font-size: 13px; color: #fff; white-space: nowrap;
+        }
+        /* 子彈 */
+        .bullet {
+            position: absolute; width: 8px; height: 16px; border-radius: 4px;
+            background: linear-gradient(#fff, #f39c12);
+            box-shadow: 0 0 6px #f1c40f; z-index: 11; pointer-events: none;
+        }
         #confirm-screen {
             position: absolute; inset: 0; background: rgba(0,0,0,0.75);
             display: none; align-items: center; justify-content: center; z-index: 45;
@@ -1011,6 +1054,18 @@
         <button id="clockout-btn" class="corner-btn">🏁 下班結算</button>
         <button id="quit-btn" class="corner-btn">🏠 主畫面</button>
 
+        <!-- 進行中顯示已裝備的道具 -->
+        <div id="loadout-bar"></div>
+
+        <!-- 商店 -->
+        <div id="shop-screen">
+            <h2>🛒 爹地的道具店</h2>
+            <div class="shop-coins">你的金幣：<span id="shop-coin">0</span> 💰　<span class="lv-tip">（每局小費 $500 換 1 金幣）</span></div>
+            <div class="shop-note lv-tip">關卡開始前最多裝備 3 個消耗道具，用一局消耗一個；用了道具的那局不列入排行榜。賭城／運動會／復仇者／台灣不能用道具。</div>
+            <div id="shop-grid" class="shop-grid"></div>
+            <button id="shop-close" class="small-btn">返回</button>
+        </div>
+
         <!-- 離開確認 -->
         <div id="confirm-screen">
             <div class="cf-card">
@@ -1091,6 +1146,7 @@
             </div>
             <div class="btn-row">
                 <button id="world-btn" class="small-btn go">🏆 排行榜</button>
+                <button id="shop-btn" class="small-btn" style="background:#8e44ad">🛒 商店 <span id="coin-lbl">0</span>💰</button>
             </div>
             <div id="start-board" class="board"></div>
         </div>
@@ -2620,8 +2676,10 @@
         let dodgesThisRun = 0;
 
         function achCount() { return ACH.filter(a => achUnlocked[a.id]).length; }
+        const ASSIST_OK = new Set(['passport', 'souvenirs', 'trip1', 'taiwanclear']);   // 收集類成就用道具也算
         function unlock(id) {
             if (achUnlocked[id]) return;
+            if (assisted && !ASSIST_OK.has(id)) return;   // 🛒 用了道具，技術型成就不解鎖
             const a = ACH.find(x => x.id === id); if (!a) return;
             achUnlocked[id] = true;
             save('wyd_ach', achUnlocked);
@@ -2678,6 +2736,165 @@
         const startBoard = document.getElementById('start-board');
         const overBoard  = document.getElementById('over-board');
         renderBoard(startBoard, 'story', -1);
+
+        // ===== 商店 / 金幣 / 道具 =====
+        let coins = load('wyd_coins', 0);
+        let inv   = load('wyd_inv', {});
+        let equip = load('wyd_equip', []);           // 已裝備的消耗道具 id（最多 3）
+        let perks = load('wyd_perks', { maxlife: 0, rate: 0 });
+        let assisted = false;                        // 本局是否用了消耗道具（用了就不上榜）
+        let pwShield = 0, pwDouble = false, pwSlow = false, pwTurret = false, pwMagnet = false, pwLuck = false;
+
+        const SHOP = [
+            { id:'shield', icon:'🛡️', name:'護盾',     desc:'擋下 3 次適尿通，不扣分不加髮量', price:3 },
+            { id:'life',   icon:'❤️', name:'保命符',   desc:'開局多 1 條命',                 price:3 },
+            { id:'double', icon:'✨', name:'雙倍小費', desc:'整局小費 ×2（過關門檻不算）',   price:5 },
+            { id:'slow',   icon:'⏱️', name:'慢動作',   desc:'整局所有落下物慢 25%',          price:4 },
+            { id:'turret', icon:'🔫', name:'藥盒剋星', desc:'錢包自動往上射子彈，擊毀適尿通', price:6 },
+            { id:'magnet', icon:'🧲', name:'吸金磁鐵', desc:'鈔票會朝錢包靠過來',            price:4 },
+            { id:'luck',   icon:'🍀', name:'幸運草',   desc:'金鈔更常出現',                  price:4 }
+        ];
+        const PERKS = [
+            { id:'maxlife', icon:'💗', name:'永久多一命', desc:'每局開場命數 +1', price:20, max:2 },
+            { id:'rate',    icon:'📈', name:'金幣加成',   desc:'小費換金幣 +50%',  price:25, max:3 }
+        ];
+        const CONS = {}; SHOP.forEach(s => CONS[s.id] = s);
+        function coinRate() { return 1 + 0.5 * (perks.rate || 0); }
+        function saveShop() { save('wyd_coins', coins); save('wyd_inv', inv); save('wyd_equip', equip); save('wyd_perks', perks); }
+        function renderCoinLabels() {
+            const a = document.getElementById('coin-lbl'); if (a) a.innerText = coins;
+            const b = document.getElementById('shop-coin'); if (b) b.innerText = coins;
+        }
+        function earnCoins(total) {
+            const e = Math.floor(Math.floor(Math.max(0, total) / 500) * coinRate());
+            if (e > 0) { coins += e; saveShop(); renderCoinLabels(); }
+            return e;
+        }
+        function ownedCount(id) { return inv[id] || 0; }
+
+        function renderShop() {
+            renderCoinLabels();
+            const grid = document.getElementById('shop-grid');
+            let html = '';
+            SHOP.forEach(s => {
+                const on = equip.includes(s.id);
+                const own = ownedCount(s.id);
+                html += `<div class="shop-item ${on ? 'equipped' : ''}">
+                    <div class="si-icon">${s.icon}</div>
+                    <div class="si-body"><div class="si-name">${s.name}　<span class="si-own">持有 ${own}</span></div>
+                    <div class="si-desc">${s.desc}　<b style="color:#f1c40f">${s.price}💰</b></div></div>
+                    <div class="si-btns">
+                        <button class="si-buy" data-buy="${s.id}" ${coins < s.price ? 'disabled' : ''}>購買</button>
+                        <button class="si-equip ${on ? 'on' : ''}" data-equip="${s.id}" ${own < 1 && !on ? 'disabled' : ''}>${on ? '已裝備' : '裝備'}</button>
+                    </div></div>`;
+            });
+            html += `<div class="shop-note lv-tip" style="margin:6px 0 2px">永久升級（不影響排行榜）</div>`;
+            PERKS.forEach(p => {
+                const lv = perks[p.id] || 0;
+                const maxed = lv >= p.max;
+                html += `<div class="shop-item perm">
+                    <div class="si-icon">${p.icon}</div>
+                    <div class="si-body"><div class="si-name">${p.name}　<span class="si-own">Lv ${lv}/${p.max}</span></div>
+                    <div class="si-desc">${p.desc}　<b style="color:#f1c40f">${maxed ? '已滿級' : p.price + '💰'}</b></div></div>
+                    <div class="si-btns"><button class="si-buy" data-perk="${p.id}" ${maxed || coins < p.price ? 'disabled' : ''}>${maxed ? '滿級' : '升級'}</button></div></div>`;
+            });
+            grid.innerHTML = html;
+        }
+        document.getElementById('shop-grid').addEventListener('click', (e) => {
+            const buy = e.target.dataset && e.target.dataset.buy;
+            const perk = e.target.dataset && e.target.dataset.perk;
+            const eq = e.target.dataset && e.target.dataset.equip;
+            if (buy) { const s = CONS[buy]; if (coins >= s.price) { coins -= s.price; inv[buy] = ownedCount(buy) + 1; saveShop(); sfx.gold(); renderShop(); } }
+            else if (perk) { const p = PERKS.find(x => x.id === perk); if ((perks[perk] || 0) < p.max && coins >= p.price) { coins -= p.price; perks[perk] = (perks[perk] || 0) + 1; saveShop(); sfx.gold(); renderShop(); } }
+            else if (eq) {
+                const i = equip.indexOf(eq);
+                if (i >= 0) equip.splice(i, 1);
+                else if (equip.length < 3 && ownedCount(eq) > 0) equip.push(eq);
+                else if (equip.length >= 3) toast('最多裝備 3 個道具');
+                saveShop(); renderShop(); renderLoadoutBar();
+            }
+        });
+        document.getElementById('shop-btn').addEventListener('click', () => { renderShop(); document.getElementById('shop-screen').style.display = 'flex'; });
+        document.getElementById('shop-close').addEventListener('click', () => { document.getElementById('shop-screen').style.display = 'none'; });
+
+        // 進行中裝備列
+        function renderLoadoutBar() {
+            const bar = document.getElementById('loadout-bar');
+            if (!bar) return;
+            const on = [];
+            if (pwShield > 0) on.push(`🛡️×${pwShield}`);
+            if (pwDouble) on.push('✨×2');
+            if (pwSlow) on.push('⏱️');
+            if (pwTurret) on.push('🔫');
+            if (pwMagnet) on.push('🧲');
+            if (pwLuck) on.push('🍀');
+            bar.innerHTML = on.length ? `<div class="lo">${on.join('　')}</div>` : '';
+            bar.style.display = (on.length && isPlaying) ? 'flex' : 'none';
+        }
+
+        function clearPowerups() {
+            pwShield = 0; pwDouble = pwSlow = pwTurret = pwMagnet = pwLuck = false;
+            assisted = false; turretAcc = 0; clearBullets();
+        }
+        // 開局套用裝備：allowed 為 false（賭城/運動會/復仇者/台灣/單關）則不啟用道具
+        function applyLoadout(allowed) {
+            clearPowerups();
+            lives = START_LIVES + (perks.maxlife || 0);   // 永久多命一律生效，不算 assisted
+            if (allowed) {
+                const active = [];
+                equip.slice(0, 3).forEach(id => { if (ownedCount(id) > 0) { inv[id]--; active.push(id); } });
+                equip = equip.filter(id => ownedCount(id) > 0 || active.includes(id));
+                active.forEach(id => {
+                    if (id === 'shield') pwShield = 3;
+                    else if (id === 'life') lives += 1;
+                    else if (id === 'double') pwDouble = true;
+                    else if (id === 'slow') pwSlow = true;
+                    else if (id === 'turret') pwTurret = true;
+                    else if (id === 'magnet') pwMagnet = true;
+                    else if (id === 'luck') pwLuck = true;
+                });
+                assisted = active.length > 0;
+                saveShop();
+            }
+            renderLives();
+            renderLoadoutBar();
+        }
+
+        // ===== 子彈（藥盒剋星）=====
+        let bullets = [], turretAcc = 0;
+        function clearBullets() { bullets.forEach(b => b.el.remove()); bullets = []; }
+        function fireBullet() {
+            const el = document.createElement('div'); el.className = 'bullet';
+            const bx = basketX + basketWidth / 2 - 4, by = basketY - 16;
+            el.style.left = bx + 'px'; el.style.top = by + 'px';
+            container.appendChild(el);
+            bullets.push({ el, x: bx, y: by });
+            sfx.tool();
+        }
+        function updateBullets(dt) {
+            if (pwTurret && isPlaying && !paused) {
+                turretAcc += dt;
+                if (turretAcc >= 27) { turretAcc = 0; fireBullet(); }   // 約 0.45 秒一發
+            }
+            if (!bullets.length) return;
+            const pills = [...container.querySelectorAll('.pill-box, .mega-pill')];
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const b = bullets[i];
+                b.y -= 9 * dt; b.el.style.top = b.y + 'px';
+                if (b.y < -20) { b.el.remove(); bullets.splice(i, 1); continue; }
+                const br = b.el.getBoundingClientRect();
+                let hit = false;
+                for (const p of pills) {
+                    const pr = p.getBoundingClientRect();
+                    if (br.left < pr.right && br.right > pr.left && br.top < pr.bottom && br.bottom > pr.top) {
+                        popText((parseFloat(p.style.transform.replace(/.*translate\(([-\d.]+).*/, '$1')) || b.x), b.y - 6, '💥', '#ff6b6b');
+                        p.remove(); hit = true; break;
+                    }
+                }
+                if (hit) { b.el.remove(); bullets.splice(i, 1); }
+            }
+        }
+        renderCoinLabels();   // 開始畫面顯示目前金幣
 
         // 加班模式解鎖狀態
         const startEndlessBtn = document.getElementById('start-endless-btn');
@@ -2970,6 +3187,8 @@
         // 觸控：錢包放在手指上方 TOUCH_OFFSET_Y，touchstart 也處理，手指一放下就定位
         function onTouch(e) {
             if (!isPlaying) return;
+            // 點在按鈕/工具列上：不要攔截，讓按鈕正常觸發（手機才按得到主頁、下班等）
+            if (e.target.closest('button, #audio-bar, #loadout-bar')) return;
             const t = e.touches[0]; if (!t) return;
             const p = toLocal(t.clientX, t.clientY);
             moveBasket(p.x - basketWidth / 2, p.y - basketHeight - TOUCH_OFFSET_Y);
@@ -3007,11 +3226,12 @@
         let lastTk = performance.now();
         function keyLoop(now) {
             const dt = Math.min(2, Math.max(0, ((now || performance.now()) - lastTk) / 16.667)); lastTk = now || performance.now();
-            if (isPlaying) {
+            if (isPlaying && !paused) {
                 const dx = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
                 const dy = (keys.down  ? 1 : 0) - (keys.up   ? 1 : 0);
                 if (dx || dy) moveBasket(basketX + dx * KEY_SPEED * dt, basketY + dy * KEY_SPEED * dt);
             }
+            updateBullets(dt);
             requestAnimationFrame(keyLoop);
         }
         requestAnimationFrame(keyLoop);
@@ -3088,6 +3308,7 @@
             levelScreen.style.display = 'none';
             gameOverScreen.style.display = 'none';
             quitBtn.style.display = 'block';     // 任何模式進行中都能中斷回主畫面
+            turretAcc = 0; renderLoadoutBar();   // 顯示已裝備道具、重置砲塔節奏
             if (!trip) startMusic(endless ? 'endless' : 'story');
             // 出差：每關必掉一個特產，8 到 20 秒之間隨機出現
             clearTimeout(souvenirTimer);
@@ -3197,6 +3418,8 @@
             stopMusic();
             clearTimeout(souvenirTimer);
             clearItems();
+            clearBullets();
+            document.getElementById('loadout-bar').style.display = 'none';
             clockoutBtn.style.display = 'none';
             quitBtn.style.display = 'none';
             paused = false;
@@ -3411,14 +3634,21 @@
                 finalScore.style.color = '#f1c40f';
             }
 
+            // 金幣結算：每 $500 換 1 金幣（乘上永久加成）
+            const earned = earnCoins(total);
+            finalScore.innerHTML += `<br><span style="font-size:14px;color:#f39c12">💰 賺得 ${earned} 金幣（共 ${coins}）</span>`;
+
             // 本場解鎖的成就
             const runAchEl = document.getElementById('run-ach');
             runAchEl.innerText = runAch.length ? runAch.map(a => a.icon).join('') : '';
             runAchEl.title = runAch.map(a => a.name).join('、');
 
-            // 排行榜：直接用進場設定的名字自動上本機榜（不再另外問名字）
+            // 排行榜：用了道具的那局不列入排行榜；否則用進場名字自動上榜
             nameEntry.style.display = 'none';
-            if (qualifies(mode, total)) {
+            if (assisted) {
+                finalScore.innerHTML += `<br><span style="font-size:12px;color:#95a5a6">🛒 本局使用道具，不列入排行榜</span>`;
+                renderBoard(overBoard, mode, -1);
+            } else if (qualifies(mode, total)) {
                 const nm = (load('wyd_player', '') || '路人').slice(0, 20);
                 const idx = addScore(mode, { name: nm, score: total, hair: hairLevel + 1, sec: elapsed });
                 renderBoard(overBoard, mode, idx);
@@ -3603,6 +3833,11 @@
                 const r = item.getBoundingClientRect();
                 if (r.bottom >= b.top && r.top <= b.bottom &&
                     r.right  >= b.left && r.left <= b.right) {
+                    if (pwShield > 0) {   // 🛡️ 護盾擋下大藥盒
+                        pwShield--; renderLoadoutBar();
+                        popText(basketX - 10, basketY - 20, '🛡️ 擋下大藥盒', '#5dade2'); sfx.tool();
+                        updateScore(); item.remove(); megaCooldownFor(2000); return;
+                    }
                     // 命中：扣分 + combo歸零 + 髮量 +2
                     score -= 50; raw = Math.max(0, raw - 50);
                     pillsThisLevel++; pillsThisRun++;
@@ -3691,7 +3926,7 @@
             const canLife = lifeSpawnedThisLevel < (lv.lifePerLevel || LIFE_PER_LEVEL);   // 烏克蘭：更多補命
             const p_life = p_pill + (canLife ? (lv.lifeChance || LIFE_CHANCE) : 0);
             const p_tool = p_life + lv.tool;
-            const p_gold = p_tool + lv.gold;
+            const p_gold = p_tool + lv.gold + (pwLuck ? 0.12 : 0);   // 🍀 幸運草：金鈔更常出現
             const p_hongbao = p_gold + (lv.mech === 'hongbao' ? 0.08 : 0);   // 中國：紅包
             const p_junk = p_hongbao + (lv.junk ? 0.25 : 0);
 
@@ -3830,6 +4065,7 @@
             }
             // 籃球：拋物線 + 落地彈跳一次
             speed *= paceMul();   // 四段時間節奏：越後面掉越快
+            if (pwSlow) speed *= 0.75;   // ⏱️ 慢動作道具
             let vy = speed, bounced = false;
             const bounceFloor = 415 + Math.random() * 55;
             let x = initLeft;
@@ -3891,6 +4127,12 @@
                     if (x < 0) { x = 0; drift = -drift; }               // 撞左牆反彈
                     else if (x > containerWidth - w) { x = containerWidth - w; drift = -drift; }
                 }
+                // 🧲 吸金磁鐵：鈔票/金鈔/紅包朝錢包靠過來
+                if (pwMagnet && (type === 'gold' || type === 'junk' || type === 'hongbao' || /^\d+$/.test(type))) {
+                    const tgt = basketX + basketWidth / 2 - w / 2;
+                    x += Math.sign(tgt - x) * Math.min(2.4 * dt, Math.abs(tgt - x));
+                    x = Math.max(0, Math.min(containerWidth - w, x));
+                }
                 // 套用位置：CSS 動畫物件用 top/left；其餘用 transform 搬移（加命併入脈動、披薩併入旋轉）
                 if (cssAnimItem) {
                     item.style.top = topPos + 'px';
@@ -3915,6 +4157,11 @@
                     r.right >= b.left && r.left <= b.right) {
                     const px = basketX, py = basketY - 22;   // 飄字位置
                     if (type === 'pill') {
+                        if (pwShield > 0) {   // 🛡️ 護盾擋下，不扣分不加髮量不斷連擊
+                            pwShield--; renderLoadoutBar();
+                            popText(px, py, '🛡️ 擋下', '#5dade2'); sfx.tool();
+                            updateScore(); item.remove(); return;
+                        }
                         const pc = lv.pillCost || 50;              // 烏克蘭：藥盒扣 100
                         score -= pc; raw = Math.max(0, raw - pc);
                         pillsThisLevel++; pillsThisRun++;
@@ -4064,7 +4311,7 @@
                             else if (item.dataset.rcolor === rouletteColor) { gain *= 3; tag += ' 🎡×3'; }
                             else { gain = 0; rawVal = 0; tag = ' 💸押錯色'; }
                         }
-                        score += gain;
+                        score += gain * (pwDouble ? 2 : 1);   // ✨ 雙倍小費（門檻 raw 不加倍）
                         raw += rawVal;     // 門檻只算面額（摩納哥押錯色不計）
                         addCombo();
                         if (lv.mech === 'slot') slotTick();
@@ -4122,6 +4369,7 @@
             ensureAudio();
             endless = false; trip = false; casinoTour = false; sportsDay = false; avengersDay = false; taiwanRun = false; singleRun = false;
             resetRun();
+            applyLoadout(true);
             showLevelIntro();
         }
         // 世界出差：全國家隨機排序，一站接一站
@@ -4129,6 +4377,7 @@
             ensureAudio();
             endless = false; trip = true; casinoTour = false; sportsDay = false; avengersDay = false; taiwanRun = false; singleRun = false;
             resetRun();
+            applyLoadout(true);
             tripLevels = [pickTripCountry()];   // 從還沒蓋章的國家開始
             tripStop = 1;
             showLevelIntro();
@@ -4137,7 +4386,7 @@
         function newCasino() {
             ensureAudio();
             endless = false; trip = true; casinoTour = true; sportsDay = false; avengersDay = false; taiwanRun = false; singleRun = false;
-            resetRun(); tourPass = 0;
+            resetRun(); tourPass = 0; applyLoadout(false);
             tripLevels = CASINO_IDS.map(id => COUNTRIES.find(c => c.id === id));
             tripStop = 1;
             showLevelIntro();
@@ -4146,7 +4395,7 @@
         function newSports() {
             ensureAudio();
             endless = false; trip = true; casinoTour = false; sportsDay = true; avengersDay = false; taiwanRun = false; singleRun = false;
-            resetRun(); tourPass = 0;
+            resetRun(); tourPass = 0; applyLoadout(false);
             tripLevels = SPORTS.slice();
             tripStop = 1;
             showLevelIntro();
@@ -4155,7 +4404,7 @@
         function newAvengers() {
             ensureAudio();
             endless = false; trip = true; casinoTour = false; sportsDay = false; avengersDay = true; taiwanRun = false; singleRun = false;
-            resetRun(); tourPass = 0;
+            resetRun(); tourPass = 0; applyLoadout(false);
             tripLevels = AVENGERS.slice();
             tripStop = 1;
             showLevelIntro();
@@ -4164,7 +4413,7 @@
         function newTaiwan() {
             ensureAudio();
             endless = false; trip = true; casinoTour = false; sportsDay = false; avengersDay = false; taiwanRun = true; singleRun = false;
-            resetRun(); tourPass = 0;
+            resetRun(); tourPass = 0; applyLoadout(false);
             tripLevels = [TAIWAN];
             tripStop = 1;
             showLevelIntro();
@@ -4173,7 +4422,7 @@
         function newSingle(lv) {
             ensureAudio();
             endless = false; trip = true; casinoTour = false; sportsDay = false; avengersDay = false; taiwanRun = false; singleRun = true;
-            resetRun(); tourPass = 0;
+            resetRun(); tourPass = 0; applyLoadout(false);
             tripLevels = [lv];
             tripStop = 1;
             showLevelIntro();
@@ -4181,8 +4430,9 @@
         // 從開始畫面進加班：全新一場，髮量 0
         function newEndless() {
             ensureAudio();
-            endless = true; trip = false; casinoTour = false; sportsDay = false; taiwanRun = false; singleRun = false;
+            endless = true; trip = false; casinoTour = false; sportsDay = false; avengersDay = false; taiwanRun = false; singleRun = false;
             resetRun();
+            applyLoadout(true);
             startScreen.style.display = 'none';
             startLevel();
         }
