@@ -622,6 +622,16 @@
         #sports-screen .pp-grid { grid-template-columns: repeat(3, 1fr); }
         #sports-screen .pp-item { cursor: pointer; }
         .sp-btn-row { display: flex; gap: 10px; margin-top: 14px; }
+        /* 復仇者集結預覽（沿用 pp-grid / pp-item 樣式）*/
+        #avengers-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.92); display: none; flex-direction: column;
+            align-items: center; z-index: 22; padding: 10px 12px;
+            box-sizing: border-box; overflow-y: auto;
+        }
+        #avengers-screen h2 { margin: 0 0 8px; font-size: 18px; color: #9b59b6; }
+        #avengers-screen .pp-grid { grid-template-columns: repeat(3, 1fr); }
+        #avengers-screen .pp-item { cursor: pointer; }
         /* 世界排行 */
         #world-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -837,6 +847,7 @@
         .mode-card.endless { border-color: #8e44ad; }
         .mode-card.casino  { border-color: #f1c40f; }
         .mode-card.sports  { border-color: #e67e22; }
+        .mode-card.avengers { border-color: #6c3483; }
         .mc-icon { font-size: 30px; width: 36px; text-align: center; }
         .mc-text { flex: 1; }
         .mc-name { font-size: 16px; font-weight: bold; }
@@ -845,6 +856,7 @@
         .mode-card.endless .mc-name { color: #bb8fce; }
         .mode-card.casino .mc-name  { color: #f1c40f; }
         .mode-card.sports .mc-name  { color: #e67e22; }
+        .mode-card.avengers .mc-name { color: #9b59b6; }
         .mc-desc { font-size: 12px; color: #bdc3c7; line-height: 1.35; }
         .mc-best { font-size: 11px; color: #f1c40f; margin-top: 3px; }
         .mc-lock {
@@ -1030,6 +1042,14 @@
                         <div class="mc-best" id="best-sports"></div>
                     </div>
                 </div>
+                <div class="mode-card avengers" id="start-avengers-btn">
+                    <div class="mc-icon">🦸</div>
+                    <div class="mc-text">
+                        <div class="mc-name">復仇者集結</div>
+                        <div class="mc-desc">六位英雄連闖，滅霸壓軸</div>
+                        <div class="mc-best" id="best-avengers"></div>
+                    </div>
+                </div>
                 <div class="mode-card endless locked" id="start-endless-btn">
                     <div class="mc-icon">🌙</div>
                     <div class="mc-text">
@@ -1086,6 +1106,16 @@
             <div class="sp-btn-row">
                 <button id="sports-start" class="small-btn go">🏆 開始運動會</button>
                 <button id="sports-close" class="small-btn">← 上一頁</button>
+                <button class="small-btn nav-home">🏠 主畫面</button>
+            </div>
+        </div>
+
+        <div id="avengers-screen">
+            <h2>🦸 復仇者集結　戰前預覽</h2>
+            <div id="av-grid" class="pp-grid"></div>
+            <div class="sp-btn-row">
+                <button id="avengers-start" class="small-btn go">🦸 開始集結</button>
+                <button id="avengers-close" class="small-btn">← 上一頁</button>
                 <button class="small-btn nav-home">🏠 主畫面</button>
             </div>
         </div>
@@ -1510,6 +1540,62 @@
         };
         SPORTS.forEach(s => { s.bc = SPORTS_BC[s.id]; });
 
+        // ===== 復仇者集結：固定六站英雄關卡，最終站滅霸 =====
+        const AVENGERS = [
+            { id: 'avim', flag: '🤖', country: '鋼鐵人', name: '史塔克大廈 · 制導追擊', img: 'assets/avengers-ironman.jpg', currency: '$',
+              time: 30, target: 1000, pill: 0.28, spawn: 300, bossMove: 260, speedBase: 2.8, drift: 0, speedMul: 0.95,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'homing', accent: '#c0392b',
+              tip: '奇塔瑞藥盒會鎖定錢包自動追過來，別傻站著等它',
+              tip2: '甩開追蹤藥盒 5 次，解鎖「鋼鐵反應爐」隱藏成就',
+              lang: 'zh-TW', souvenir: ['🤖', '微型反應爐'],
+              lines: { intro: ['I am Iron Man.', '登場'], clear: ['我們贏了，先別慶祝', '完勝'], fail: ['J.A.R.V.I.S.，撐住…', '重創'] } },
+            { id: 'avth', flag: '🔨', country: '雷神索爾', name: '阿斯嘉特 · 風暴戰場', img: 'assets/avengers-thor.jpg', currency: '$',
+              time: 30, target: 1000, pill: 0.27, spawn: 300, bossMove: 260, speedBase: 2.8, drift: 1.2, speedMul: 0.9,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'wind', accent: '#3498db',
+              tip: '雷霆之力吹得鈔票東倒西歪，風向一變要馬上反應',
+              tip2: '風向剛轉換的瞬間接到，小費暴增',
+              lang: 'zh-TW', souvenir: ['🔨', '雷神之鎚'],
+              lines: { intro: ['即使失去一切，我依然是阿斯嘉特之子。', '登場'], clear: ['這瘋狂之舉，成功了。', '奏效'], fail: ['妙爾尼爾…回到我手上', '暈眩'] } },
+            { id: 'avhu', flag: '💚', country: '浩克', name: '諾威真托邦 · 憤怒重擊', img: 'assets/avengers-hulk.jpg', currency: '$',
+              time: 30, target: 1100, pill: 0.30, spawn: 280, bossMove: 240, speedBase: 2.8, drift: 0.8, speedMul: 0.9,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'boxing', accent: '#27ae60',
+              tip: '成排的適尿通像重拳打過來，左右閃身別硬接',
+              tip2: '連擊衝到 10 觸發「HULK SMASH」，清空全場藥盒＋金鈔雨',
+              lang: 'zh-TW', souvenir: ['💚', '撕裂的紫色褲子'],
+              lines: { intro: ['浩克最強！', '登場'], clear: ['浩克…贏了。', '獲勝'], fail: ['浩克…累了…', '倒下'] } },
+            { id: 'avca', flag: '🛡️', country: '美國隊長', name: '復仇者基地 · 盾牌迴旋', img: 'assets/avengers-captain.jpg', currency: '$',
+              time: 30, target: 1000, pill: 0.27, spawn: 300, bossMove: 260, speedBase: 2.7, drift: 0, speedMul: 0.9,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'boomerang', accent: '#2e5cb8',
+              tip: '盾牌鈔票沒接到會自己飛回來，錯過別急，還有一次機會',
+              tip2: '接住迴旋回來的盾牌鈔票，連擊直接 +2',
+              lang: 'zh-TW', souvenir: ['🛡️', '汪達爾金屬盾'],
+              lines: { intro: ['我可以陪你們一整天。', '登場'], clear: ['復仇者，集結！', '集結'], fail: ['盾牌…掉了…', '失手'] } },
+            { id: 'avsp', flag: '🕷️', country: '蜘蛛人', name: '皇后區 · 蛛絲纏繞', img: 'assets/avengers-spiderman.jpg', currency: '$',
+              time: 30, target: 1000, pill: 0.28, spawn: 290, bossMove: 260, speedBase: 2.8, drift: 0.6, speedMul: 0.9,
+              junk: false, gold: 0.05, tool: 0.05, mech: 'stretch', accent: '#e53935',
+              tip: '蛛絲會把快掉出畫面的鈔票黏一下拉回來，多一次搶救機會',
+              tip2: '蛛絲救回的鈔票，有機率直接補一命',
+              lang: 'zh-TW', souvenir: ['🕷️', '蛛絲發射器'],
+              lines: { intro: ['能力越強，責任越大。', '登場'], clear: ['鄰家蜘蛛人，任務完成！', '完成'], fail: ['蛛絲…用完了…', '沒了'] } },
+            { id: 'avtn', flag: '💎', country: '滅霸', name: '泰坦星 · 無限手套終戰', img: 'assets/avengers-thanos.jpg', currency: '$',
+              time: 35, target: 1500, pill: 0.32, spawn: 240, bossMove: 300, speedBase: 3.2, drift: 0, speedMul: 1.05,
+              junk: false, gold: 0.06, tool: 0.05, mech: 'clockwork', accent: '#6c3483',
+              tip: '無限手套的力量毫不留情，等速全速壓境，沒有喘息空間',
+              tip2: '完美接住最終站，解鎖「我是無可避免的」隱藏成就',
+              lang: 'zh-TW', souvenir: ['💎', '無限寶石（複製品）'],
+              lines: { intro: ['我是無可避免的。', '登場'], clear: ['我摧毀了…一半的藥盒。', '響指'], fail: ['你們…只是拖延而已…', '未完'] } }
+        ];
+        // 英雄播報：預覽與開戰前用主播口吻喊一段（無 mp3 時走 TTS）
+        const AVENGERS_BC = {
+            avim: '史塔克工業防禦系統全開！鋼鐵人準備迎擊，看他能守住多少家產！',
+            avth: '天空烏雲密布，雷神即將降臨戰場，風暴等級瞬間拉滿！',
+            avhu: '警告！憤怒指數持續飆升，浩克即將失控暴走，現場觀眾請注意安全！',
+            avca: '復仇者基地防線最後一哩，美國隊長舉盾就位，絕不退讓！',
+            avsp: '皇后區上空傳來蛛絲聲響，你們的鄰家蜘蛛人正式上場！',
+            avtn: '無限手套寒光乍現，宇宙最強反派滅霸，即將彈指改寫命運！'
+        };
+        AVENGERS.forEach(a => { a.bc = AVENGERS_BC[a.id]; });
+
         // ===== 隱藏最終關：台灣（集滿護照後解鎖）=====
         const TAIWAN = {
             id: 'tw', flag: '🇹🇼', country: '台灣', name: '寶島 · 颱風夜市總決賽',
@@ -1628,6 +1714,7 @@
         let trip = false;              // 目前是否在出差模式
         let casinoTour = false;        // 賭城之旅：固定三站（拉斯維加斯→摩納哥→澳門）的有限出差
         let sportsDay = false;         // 運動會：固定五站職業運動的有限串連
+        let avengersDay = false;       // 復仇者集結：固定六站英雄關卡的有限串連
         let taiwanRun = false;         // 隱藏最終關：台灣
         let singleRun = false;         // 測試員：單關試玩
         // 台灣即時狀態
@@ -1635,7 +1722,7 @@
         let twBoba = 0;                // 喝了幾杯珍奶
         let twBoostUntil = 0;          // 夜市狂歡 ×2 到幾點
         const CASINO_IDS = ['us', 'mc', 'mo'];
-        function finiteTour() { return casinoTour || sportsDay || taiwanRun || singleRun; }
+        function finiteTour() { return casinoTour || sportsDay || avengersDay || taiwanRun || singleRun; }
         let tourPass = 0;              // 有限串連中「達標過關」的站數（賭神／奧運金牌用）
         let peakCombo = 0;             // 本關達到的最高連擊（完美演出用）
         let tripLevels = [];           // 這趟出差抽到的國家（依序）
@@ -2207,6 +2294,7 @@
             { id: 'holeinone',  icon: '⛳', name: '一桿進洞', desc: '高爾夫關正中果嶺接到' },
             { id: 'screamer',   icon: '⚽', name: '世界波',   desc: '足球關接到射門金球' },
             { id: 'sportsmaster', icon: '🏆', name: '全能運動員', desc: '完成一次運動會全部關卡' },
+            { id: 'avengersmaster', icon: '🦸', name: '復仇者集結', desc: '完成一次復仇者集結全部關卡' },
             // ── 高難度 ──
             { id: 'combo30',   icon: '⚡', name: '連擊 ×30',   desc: '單次連擊達到 30，一張都不能漏' },
             { id: 'perfect',   icon: '💎', name: '完美演出',   desc: '一關內連擊上看 15、全程滴藥不沾且達標' },
@@ -2214,6 +2302,7 @@
             { id: 'ot300',     icon: '🧛', name: '賣肝之王',   desc: '加班模式硬撐過 300 秒' },
             { id: 'casinopro', icon: '🃏', name: '賭神',       desc: '賭城之旅三站全部達標過關' },
             { id: 'goldmedal', icon: '🥇', name: '奧運金牌',   desc: '運動會全部關卡都達標過關' },
+            { id: 'thanossnap', icon: '🧤', name: '我是無可避免的', desc: '復仇者集結六站全部達標過關' },
             { id: 'taiwanclear', icon: '🇹🇼', name: '寶島之光', desc: '通關隱藏最終關 · 台灣' },
             { id: 'taiwanperfect', icon: '💎', name: '封關大師', desc: '滴藥不沾通關台灣最終關' }
         ];
@@ -2432,6 +2521,51 @@
             document.getElementById('pp-detail').style.display = 'none';
             newSports();
         });
+        // ===== 復仇者集結預覽 =====
+        function renderAvengers() {
+            document.getElementById('av-grid').innerHTML = AVENGERS.map(a => `
+                <div class="pp-item" data-id="${a.id}">
+                    <img src="${a.img}${AV}" alt="">
+                    <div class="pp-name">${a.flag} ${a.country}</div>
+                    <div class="pp-mech">${a.name}</div>
+                </div>`).join('');
+        }
+        // 點某位英雄：顯示玩法說明並用主播口吻播報
+        function showAvengerDetail(a) {
+            document.getElementById('ppd-card').innerHTML =
+                `<div class="ppd-flag">${a.flag}</div>` +
+                `<div class="ppd-name">${a.country} · ${a.name}</div>` +
+                `<div class="ppd-say">📣 ${a.bc}</div>` +
+                `<div class="ppd-row"><b>⭐ 特色：</b>${a.tip}</div>` +
+                (a.tip2 ? `<div class="ppd-row"><b>✨ 隱藏玩法：</b>${a.tip2}</div>` : '') +
+                `<div class="ppd-row"><b>🎁 特產：</b>${a.souvenir[0]} ${a.souvenir[1]}</div>`;
+            playBroadcast(a);
+            const pd = document.getElementById('pp-detail');
+            pd.style.backgroundImage =
+                `linear-gradient(rgba(0,0,0,0.22), rgba(0,0,0,0.12)), url('${a.img}${AV}')`;
+            pd.style.backgroundSize = 'cover';
+            pd.style.backgroundPosition = 'center 20%';
+            pd.style.display = 'flex';
+        }
+        document.getElementById('start-avengers-btn').addEventListener('click', () => {
+            renderAvengers();
+            document.getElementById('avengers-screen').style.display = 'flex';
+        });
+        document.getElementById('av-grid').addEventListener('click', (e) => {
+            const item = e.target.closest('.pp-item'); if (!item) return;
+            const a = AVENGERS.find(x => x.id === item.dataset.id);
+            if (!a) return;
+            if (isTester()) { document.getElementById('avengers-screen').style.display = 'none'; newSingle(a); }
+            else { openPhoto(a.img + AV, () => playBroadcast(a)); }
+        });
+        document.getElementById('avengers-close').addEventListener('click', () => {
+            document.getElementById('avengers-screen').style.display = 'none';
+        });
+        document.getElementById('avengers-start').addEventListener('click', () => {
+            document.getElementById('avengers-screen').style.display = 'none';
+            document.getElementById('pp-detail').style.display = 'none';
+            newAvengers();
+        });
         let achUnlocked = load('wyd_ach', {});
         let runAch = [];              // 本場新解鎖的成就
         let pillsThisLevel = 0;       // 本關吃到的藥盒數（含巨型）
@@ -2566,6 +2700,7 @@
             set('best-trip', COUNTRIES.map(c => c.id));
             set('best-casino', CASINO_IDS);
             set('best-sports', SPORTS.map(s => s.id));
+            set('best-avengers', AVENGERS.map(a => a.id));
             const be = document.getElementById('best-endless'); if (be) be.style.display = 'none';   // 加班無關卡分數
         }
         document.getElementById('help-btn').addEventListener('click', () => {
@@ -3060,15 +3195,16 @@
                     return;
                 }
                 if (trip) {
-                    // 運動會 / 台灣不是國家，不蓋護照章；其餘（含賭城）照常蓋章
-                    if (!sportsDay && !taiwanRun && !singleRun) { stampPassport(lv.id); unlock('trip1'); }
+                    // 運動會 / 復仇者集結 / 台灣不是國家，不蓋護照章；其餘（含賭城）照常蓋章
+                    if (!sportsDay && !avengersDay && !taiwanRun && !singleRun) { stampPassport(lv.id); unlock('trip1'); }
                     if (bank >= 10000) unlock('rich');
-                    // 有限串連（賭城之旅／運動會／台灣）：跑完最後一站就圓滿結束，不再往下抽
+                    // 有限串連（賭城之旅／運動會／復仇者集結／台灣）：跑完最後一站就圓滿結束，不再往下抽
                     if (finiteTour() && levelIdx >= tripLevels.length - 1) {
                         if (sportsDay) unlock('sportsmaster');
+                        if (avengersDay) unlock('avengersmaster');
                         if (taiwanRun) { unlock('taiwanclear'); if (pillsThisLevel === 0) unlock('taiwanperfect'); }
                         // 全站達標才給高難度成就
-                        if (tourPass >= tripLevels.length && (casinoTour || sportsDay)) unlock(casinoTour ? 'casinopro' : 'goldmedal');
+                        if (tourPass >= tripLevels.length && (casinoTour || sportsDay || avengersDay)) unlock(casinoTour ? 'casinopro' : avengersDay ? 'thanossnap' : 'goldmedal');
                         finish('tripclear'); return;
                     }
                     advanceTrip();
@@ -3105,6 +3241,7 @@
                     // 有限串連：最後一站就算沒達標也直接結算
                     if (finiteTour() && levelIdx >= tripLevels.length - 1) {
                         if (sportsDay) unlock('sportsmaster');
+                        if (avengersDay) unlock('avengersmaster');
                         finish('tripclear'); return;
                     }
                     // 出差沒達標：用掉一命，但仍直接前往下一站，不卡在原地
@@ -3177,7 +3314,7 @@
             if (total >= 50000) unlock('rich50');
 
             if (reason === 'tripclear') {
-                h2.innerText = singleRun ? '✅ 這關結束' : taiwanRun ? '🇹🇼 寶島通關！環遊世界回到家' : sportsDay ? '🏆 運動會閉幕！' : casinoTour ? '🎰 賭城之旅圓滿！' : '🛂 出差圓滿！';
+                h2.innerText = singleRun ? '✅ 這關結束' : taiwanRun ? '🇹🇼 寶島通關！環遊世界回到家' : avengersDay ? '🦸 復仇者集結完畢！' : sportsDay ? '🏆 運動會閉幕！' : casinoTour ? '🎰 賭城之旅圓滿！' : '🛂 出差圓滿！';
                 const flags = tripLevels.map(l => l.flag).join(' ');
                 const last = tripLevels[tripLevels.length - 1];
                 finalScore.innerHTML =
@@ -3939,14 +4076,14 @@
         }
         function newGame() {
             ensureAudio();
-            endless = false; trip = false; casinoTour = false; sportsDay = false; taiwanRun = false; singleRun = false;
+            endless = false; trip = false; casinoTour = false; sportsDay = false; avengersDay = false; taiwanRun = false; singleRun = false;
             resetRun();
             showLevelIntro();
         }
         // 世界出差：全國家隨機排序，一站接一站
         function newTrip() {
             ensureAudio();
-            endless = false; trip = true; casinoTour = false; sportsDay = false; taiwanRun = false; singleRun = false;
+            endless = false; trip = true; casinoTour = false; sportsDay = false; avengersDay = false; taiwanRun = false; singleRun = false;
             resetRun();
             tripLevels = [pickTripCountry()];   // 從還沒蓋章的國家開始
             tripStop = 1;
@@ -3955,7 +4092,7 @@
         // 賭城之旅：固定三站（拉斯維加斯 → 摩納哥 → 澳門）
         function newCasino() {
             ensureAudio();
-            endless = false; trip = true; casinoTour = true; sportsDay = false; taiwanRun = false; singleRun = false;
+            endless = false; trip = true; casinoTour = true; sportsDay = false; avengersDay = false; taiwanRun = false; singleRun = false;
             resetRun(); tourPass = 0;
             tripLevels = CASINO_IDS.map(id => COUNTRIES.find(c => c.id === id));
             tripStop = 1;
@@ -3964,16 +4101,25 @@
         // 運動會：固定五站職業運動
         function newSports() {
             ensureAudio();
-            endless = false; trip = true; casinoTour = false; sportsDay = true; taiwanRun = false; singleRun = false;
+            endless = false; trip = true; casinoTour = false; sportsDay = true; avengersDay = false; taiwanRun = false; singleRun = false;
             resetRun(); tourPass = 0;
             tripLevels = SPORTS.slice();
+            tripStop = 1;
+            showLevelIntro();
+        }
+        // 復仇者集結：固定六站英雄關卡，最終站滅霸
+        function newAvengers() {
+            ensureAudio();
+            endless = false; trip = true; casinoTour = false; sportsDay = false; avengersDay = true; taiwanRun = false; singleRun = false;
+            resetRun(); tourPass = 0;
+            tripLevels = AVENGERS.slice();
             tripStop = 1;
             showLevelIntro();
         }
         // 隱藏最終關：台灣（集滿護照後解鎖）
         function newTaiwan() {
             ensureAudio();
-            endless = false; trip = true; casinoTour = false; sportsDay = false; taiwanRun = true; singleRun = false;
+            endless = false; trip = true; casinoTour = false; sportsDay = false; avengersDay = false; taiwanRun = true; singleRun = false;
             resetRun(); tourPass = 0;
             tripLevels = [TAIWAN];
             tripStop = 1;
@@ -3982,7 +4128,7 @@
         // 測試員：直接單關試玩任一國家
         function newSingle(lv) {
             ensureAudio();
-            endless = false; trip = true; casinoTour = false; sportsDay = false; taiwanRun = false; singleRun = true;
+            endless = false; trip = true; casinoTour = false; sportsDay = false; avengersDay = false; taiwanRun = false; singleRun = true;
             resetRun(); tourPass = 0;
             tripLevels = [lv];
             tripStop = 1;
@@ -4005,7 +4151,7 @@
             startLevel();
         }
         startBtn.addEventListener('click', newGame);
-        restartBtn.addEventListener('click', () => casinoTour ? newCasino() : trip ? newTrip() : newGame());
+        restartBtn.addEventListener('click', () => casinoTour ? newCasino() : sportsDay ? newSports() : avengersDay ? newAvengers() : trip ? newTrip() : newGame());
         document.getElementById('start-trip-btn').addEventListener('click', newTrip);
         document.getElementById('start-casino-btn').addEventListener('click', newCasino);
         startEndlessBtn.addEventListener('click', () => {
