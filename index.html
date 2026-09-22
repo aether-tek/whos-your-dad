@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="app-version" content="2026-09-22.7">
+    <meta name="app-version" content="2026-09-22.8">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -2104,11 +2104,23 @@
                 speechSynthesis.speak(u);
             } catch (e) {}
         }
+        let speechUnlocked = false;
         function ensureAudio() {
             if (!audioCtx) {
                 try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
             }
             if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            // iOS Safari 的語音合成（TTS）要在使用者點擊的當下講過一次話才會解鎖，
+            // 之後才能用程式自動觸發語音（否則之後的 speak() 會被無聲吞掉）
+            if (!speechUnlocked && window.speechSynthesis) {
+                speechUnlocked = true;
+                try {
+                    speechSynthesis.getVoices();
+                    const u = new SpeechSynthesisUtterance(' ');
+                    u.volume = 0; u.lang = 'zh-TW';
+                    speechSynthesis.speak(u);
+                } catch (e) {}
+            }
         }
         function tone(freq, dur, type, vol, slideTo, delay) {
             if (sfxMuted || !audioCtx) return;
