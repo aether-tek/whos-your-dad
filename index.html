@@ -3131,24 +3131,29 @@
                                     : hairLevel >= 6 ? '#e67e22' : '#f5b041';
         }
 
+        // ===== 場地高度：細長手機把場地加高，減少上下留白（寬度固定 400）=====
+        // 依螢幕比例算出場地高，夾在 600~820；桌機寬螢幕維持 600
+        const FIELD_H = Math.max(600, Math.min(820, Math.round(containerWidth * window.innerHeight / Math.max(1, window.innerWidth))));
+        container.style.height = FIELD_H + 'px';
+
         // ===== 小螢幕等比縮放 =====
-        // 遊戲邏輯全用 400×600 的固定座標，螢幕不夠大時整個容器用 transform 縮小
+        // 遊戲邏輯用 400×FIELD_H 座標，螢幕放不下時整個容器用 transform 縮小
         let scale = 1;
         function fitToScreen() {
             const pad = 16;   // 邊框 4px×2 加一點留白
             scale = Math.min(1,
                 (window.innerWidth  - pad) / containerWidth,
-                (window.innerHeight - pad) / 600);
+                (window.innerHeight - pad) / FIELD_H);
             container.style.transform = scale < 1 ? `scale(${scale})` : '';
         }
         window.addEventListener('resize', fitToScreen);
         fitToScreen();
 
         // ===== 錢包移動（上下左右）=====
-        // 垂直活動範圍：下半部再往上一點，避免蹲在爹地正下方秒接一切
+        // 垂直活動範圍：下半部再往上一點，避免蹲在爹地正下方秒接一切（隨場地高度調整）
         const BASKET_MIN_Y = 230;
-        const BASKET_MAX_Y = 540;
-        const BASKET_START_Y = 540;
+        const BASKET_MAX_Y = FIELD_H - 60;
+        const BASKET_START_Y = FIELD_H - 60;
         const TOUCH_OFFSET_Y = 70;   // 手機：錢包放在手指上方，免得被手指遮住
         const KEY_SPEED = 7;         // 鍵盤每幀移動的像素
 
@@ -3860,7 +3865,7 @@
                 }
 
                 // 離開畫面（底部）：算躲過一顆
-                if (topPos > 620) {
+                if (topPos > FIELD_H + 20) {
                     item.remove();
                     dodgesThisRun++;
                     if (dodgesThisRun >= 5) unlock('dodge5');
@@ -4067,7 +4072,7 @@
             speed *= paceMul();   // 四段時間節奏：越後面掉越快
             if (pwSlow) speed *= 0.75;   // ⏱️ 慢動作道具
             let vy = speed, bounced = false;
-            const bounceFloor = 415 + Math.random() * 55;
+            const bounceFloor = (FIELD_H - 185) + Math.random() * 55;
             let x = initLeft;
             let baseX = x;                         // 中心線（迴力鏢會重設）
             const sineAmp = 60 + Math.random() * 30;
@@ -4336,7 +4341,7 @@
                     return;
                 }
 
-                if (topPos > 600) {
+                if (topPos > FIELD_H) {
                     // 埃及：漏掉的金鈔被金字塔回收，再掉一次
                     if (lv.mech === 'goldrush' && type === 'gold' && !recycled) {
                         recycled = true; topPos = 125;
