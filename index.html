@@ -4533,36 +4533,48 @@
                 }, err => console.warn('LB snapshot', err));
             } catch (e) { console.warn('LB init', e); }
         }
-        // 我這個名字（不分大小寫）跨所有裝置的合併最高值 = 本機現況 vs 雲端同名各筆各欄取最高
-        function myMergedStats() {
+        // 下載：把雲端同名（不分大小寫）各裝置的實際進度合併進本機（成就/護照/特產聯集，紀錄取最高）
+        function unionInto(localObj, cloudObj) {
+            let changed = false;
+            if (cloudObj) for (const k in cloudObj) { if (cloudObj[k] && !localObj[k]) { localObj[k] = true; changed = true; } }
+            return changed;
+        }
+        function pullDownProgress() {
             const meK = normName(load('wyd_player', ''));
-            let ach = achCount(), pill = pillMax, pass = passportCount(), souv = souvenirCount();
-            const levels = Object.assign({}, levelBest || {});
+            if (!meK) return false;
+            let changed = false;
             LB.cache.forEach(r => {
                 if (!r || normName(r.name) !== meK) return;
-                ach = Math.max(ach, r.ach || 0);
-                pill = Math.max(pill, r.pillmax || 0);
-                pass = Math.max(pass, r.passport || 0);
-                souv = Math.max(souv, r.souvenirs || 0);
-                if (r.levels) for (const k in r.levels) levels[k] = Math.max(levels[k] || 0, r.levels[k]);
+                if (unionInto(achUnlocked, r.achSet)) changed = true;
+                if (unionInto(passport, r.passSet)) changed = true;
+                if (unionInto(souvenirs, r.souvSet)) changed = true;
+                if ((r.pillmax || 0) > pillMax) { pillMax = r.pillmax; changed = true; }
+                if (r.levels) for (const k in r.levels) { if ((r.levels[k] || 0) > (levelBest[k] || 0)) { levelBest[k] = r.levels[k]; changed = true; } }
             });
-            return { ach, pill, pass, souv, levels };
+            if (changed) {
+                save('wyd_ach', achUnlocked); save('wyd_passport', passport); save('wyd_souvenirs', souvenirs);
+                save('wyd_pillmax', pillMax); save('wyd_levelbest', levelBest);
+                renderAchBtn(); renderPassportBtn(); if (isPlaying) renderLives();
+            }
+            return changed;
         }
         function lbSync() {
             if (isTester()) return;   // 測試員不上傳資料庫
             if (!LB.db || !LB.uid || !LB.ready) return;   // 快照未到手前不寫，避免用空資料蓋掉雲端
             const name = load('wyd_player', '');
             if (!name) return;   // 還沒設名字就先不上榜
-            const m = myMergedStats();
-            // 只在合併後的最高值有變化時才寫，避免快照回圈
-            const sig = JSON.stringify([normName(name), m.ach, m.pass, m.souv, m.pill, m.levels]);
-            if (sig === LB.lastSig) return;
-            LB.lastSig = sig;
-            LB.db.collection('players').doc(LB.uid).set({
+            // 上傳本機實際進度（已在 pullDownProgress 合併過雲端 → 這就是聯集後的最高）
+            const payload = {
                 name: String(name).slice(0, 20),
-                ach: m.ach, passport: m.pass, souvenirs: m.souv,
-                pillmax: m.pill, levels: m.levels, updated: Date.now()
-            }, { merge: true }).catch(e => console.warn('LB sync', e));
+                ach: achCount(), passport: passportCount(), souvenirs: souvenirCount(),
+                pillmax: pillMax, levels: levelBest || {},
+                achSet: achUnlocked, passSet: passport, souvSet: souvenirs, updated: Date.now()
+            };
+            const sig = JSON.stringify([normName(name), payload.ach, payload.passport, payload.souvenirs, payload.pillmax, payload.levels,
+                Object.keys(achUnlocked).length, Object.keys(passport).length, Object.keys(souvenirs).length]);
+            if (sig === LB.lastSig) return;   // 沒變就不重寫，避免快照回圈
+            LB.lastSig = sig;
+            LB.db.collection('players').doc(LB.uid).set(payload, { merge: true }).catch(e => console.warn('LB sync', e));
         }
         let worldTab = 'ach';
         function updateWorldStatus() {
@@ -4624,8 +4636,9 @@
         document.querySelectorAll('.wtab').forEach(b => b.addEventListener('click', () => setWorldTab(b.dataset.tab)));
         document.getElementById('world-level-sel').addEventListener('change', renderWorld);
         LB.onchange = () => {
-            renderBests();   // 更新主頁卡片上的第一名
-            lbSync();        // 若別台同名裝置分數更高，把我的雲端紀錄一起更新上去（有變才寫）
+            pullDownProgress();   // 先把雲端同名裝置的實際進度（成就/護照/特產/紀錄）合併進本機
+            renderBests();        // 更新主頁卡片上的第一名
+            lbSync();             // 再把合併後的本機進度上傳（有變才寫）
             if (document.getElementById('world-screen').style.display === 'flex') renderWorld();
         };
         lbInit();
