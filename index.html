@@ -4557,9 +4557,26 @@
             document.getElementById('world-level-sel').style.display = tab === 'level' ? 'block' : 'none';
             renderWorld();
         }
+        // 把同名（不分大小寫）的各裝置資料合併成一筆，每個欄位都取最高
+        function mergedRows() {
+            const m = {};
+            LB.cache.forEach(r => {
+                if (!r || !r.name) return;
+                const k = normName(r.name);
+                if (!m[k]) m[k] = { name: r.name, ach: 0, pillmax: 0, passport: 0, souvenirs: 0, levels: {}, _an: -1 };
+                const o = m[k];
+                if ((r.ach || 0) >= o._an) { o.name = r.name; o._an = r.ach || 0; }   // 顯示名字用成就較高的那個大小寫
+                o.ach = Math.max(o.ach, r.ach || 0);
+                o.pillmax = Math.max(o.pillmax, r.pillmax || 0);
+                o.passport = Math.max(o.passport, r.passport || 0);
+                o.souvenirs = Math.max(o.souvenirs, r.souvenirs || 0);
+                if (r.levels) for (const key in r.levels) o.levels[key] = Math.max(o.levels[key] || 0, r.levels[key]);
+            });
+            return Object.values(m);
+        }
         function renderWorld() {
             const el = document.getElementById('world-board');
-            const rows = LB.cache.slice();
+            const rows = mergedRows();
             let items = [];
             if (worldTab === 'ach') items = rows.map(r => ({ name: r.name, val: (r.ach || 0) + ' / ' + ACH.length, sort: r.ach || 0 }));
             else if (worldTab === 'passport') items = rows.map(r => ({ name: r.name, val: (r.passport || 0) + ' 國 · ' + (r.souvenirs || 0) + ' 特產', sort: (r.passport || 0) * 1000 + (r.souvenirs || 0) }));
@@ -4568,13 +4585,8 @@
                 const key = document.getElementById('world-level-sel').value;
                 items = rows.filter(r => r.levels && r.levels[key] != null).map(r => ({ name: r.name, val: fmtMoney(r.levels[key]), sort: r.levels[key] }));
             }
-            // 同名（不分大小寫）只留分數最高的那一筆
-            const bestByName = {};
-            items.filter(it => it.name).forEach(it => {
-                const k = normName(it.name);
-                if (!bestByName[k] || it.sort > bestByName[k].sort) bestByName[k] = it;
-            });
-            items = Object.values(bestByName).sort((a, b) => b.sort - a.sort);
+            // rows 已依名字合併（每欄取最高），這裡只需過濾排序
+            items = items.filter(it => it.name).sort((a, b) => b.sort - a.sort);
             const me = normName(load('wyd_player', ''));
             if (!items.length) { el.innerHTML = '<div class="wl-empty">' + (LB.db ? '還沒有人上榜' : '尚未連上雲端') + '</div>'; return; }
             el.innerHTML = items.slice(0, 20).map((it, i) =>
