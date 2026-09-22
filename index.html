@@ -2708,19 +2708,29 @@
         });
 
         // ===== 排行榜（本機，前五名，故事 / 加班各一張）=====
+        // 名字正規化：去頭尾空白 + 不分大小寫
+        function normName(n) { return String(n || '').trim().toLowerCase(); }
+        // 同名（不分大小寫）只留最高分那一筆，取前 5
+        function dedupeBoard(list) {
+            const best = {};
+            list.forEach(e => { const k = normName(e.name); if (!best[k] || e.score > best[k].score) best[k] = e; });
+            return Object.values(best).sort((x, y) => y.score - x.score).slice(0, 5);
+        }
         function getBoard(mode) { return load('wyd_board_' + mode, []); }
         function qualifies(mode, total) {
             const b = getBoard(mode);
+            const k = normName(load('wyd_player', '') || '路人');
+            const mine = b.find(e => normName(e.name) === k);
+            if (mine) return total > mine.score;   // 只有超越自己的舊紀錄才算上榜
             return total > 0 && (b.length < 5 || total > b[b.length - 1].score);
         }
         function addScore(mode, entry) {
-            const b = getBoard(mode);
-            b.push(entry);
-            b.sort((x, y) => y.score - x.score);
-            b.length = Math.min(b.length, 5);
+            const b = dedupeBoard(getBoard(mode).concat([entry]));
             save('wyd_board_' + mode, b);
-            return b.indexOf(entry);
+            return b.findIndex(e => normName(e.name) === normName(entry.name));
         }
+        // 現有存檔一次性去重（把過去同名的多筆合併成最高分）
+        ['story', 'trip', 'endless'].forEach(m => save('wyd_board_' + m, dedupeBoard(getBoard(m))));
         function renderBoard(el, mode, highlightIdx) {
             const b = getBoard(mode);
             const title = mode === 'endless' ? '🌙 加班排行' : mode === 'trip' ? '🌍 出差排行' : '🏆 故事排行';
@@ -4558,11 +4568,17 @@
                 const key = document.getElementById('world-level-sel').value;
                 items = rows.filter(r => r.levels && r.levels[key] != null).map(r => ({ name: r.name, val: fmtMoney(r.levels[key]), sort: r.levels[key] }));
             }
-            items = items.filter(it => it.name).sort((a, b) => b.sort - a.sort);
-            const me = load('wyd_player', '');
+            // 同名（不分大小寫）只留分數最高的那一筆
+            const bestByName = {};
+            items.filter(it => it.name).forEach(it => {
+                const k = normName(it.name);
+                if (!bestByName[k] || it.sort > bestByName[k].sort) bestByName[k] = it;
+            });
+            items = Object.values(bestByName).sort((a, b) => b.sort - a.sort);
+            const me = normName(load('wyd_player', ''));
             if (!items.length) { el.innerHTML = '<div class="wl-empty">' + (LB.db ? '還沒有人上榜' : '尚未連上雲端') + '</div>'; return; }
             el.innerHTML = items.slice(0, 20).map((it, i) =>
-                `<div class="wl-row ${it.name === me ? 'me' : ''}"><span class="wl-rank">${i + 1}</span><span class="wl-name">${esc(it.name)}</span><span class="wl-val">${it.val}</span></div>`).join('');
+                `<div class="wl-row ${normName(it.name) === me ? 'me' : ''}"><span class="wl-rank">${i + 1}</span><span class="wl-name">${esc(it.name)}</span><span class="wl-val">${it.val}</span></div>`).join('');
         }
         function openWorld() {
             document.getElementById('world-level-sel').innerHTML =
