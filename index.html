@@ -4533,15 +4533,35 @@
                 lbSync();
             } catch (e) { console.warn('LB init', e); }
         }
+        // 我這個名字（不分大小寫）跨所有裝置的合併最高值 = 本機現況 vs 雲端同名各筆各欄取最高
+        function myMergedStats() {
+            const meK = normName(load('wyd_player', ''));
+            let ach = achCount(), pill = pillMax, pass = passportCount(), souv = souvenirCount();
+            const levels = Object.assign({}, levelBest || {});
+            LB.cache.forEach(r => {
+                if (!r || normName(r.name) !== meK) return;
+                ach = Math.max(ach, r.ach || 0);
+                pill = Math.max(pill, r.pillmax || 0);
+                pass = Math.max(pass, r.passport || 0);
+                souv = Math.max(souv, r.souvenirs || 0);
+                if (r.levels) for (const k in r.levels) levels[k] = Math.max(levels[k] || 0, r.levels[k]);
+            });
+            return { ach, pill, pass, souv, levels };
+        }
         function lbSync() {
             if (isTester()) return;   // 測試員不上傳資料庫
             if (!LB.db || !LB.uid) return;
             const name = load('wyd_player', '');
             if (!name) return;   // 還沒設名字就先不上榜
+            const m = myMergedStats();
+            // 只在合併後的最高值有變化時才寫，避免快照回圈
+            const sig = JSON.stringify([normName(name), m.ach, m.pass, m.souv, m.pill, m.levels]);
+            if (sig === LB.lastSig) return;
+            LB.lastSig = sig;
             LB.db.collection('players').doc(LB.uid).set({
                 name: String(name).slice(0, 20),
-                ach: achCount(), passport: passportCount(), souvenirs: souvenirCount(),
-                pillmax: pillMax, levels: levelBest || {}, updated: Date.now()
+                ach: m.ach, passport: m.pass, souvenirs: m.souv,
+                pillmax: m.pill, levels: m.levels, updated: Date.now()
             }, { merge: true }).catch(e => console.warn('LB sync', e));
         }
         let worldTab = 'ach';
@@ -4605,6 +4625,7 @@
         document.getElementById('world-level-sel').addEventListener('change', renderWorld);
         LB.onchange = () => {
             renderBests();   // 更新主頁卡片上的第一名
+            lbSync();        // 若別台同名裝置分數更高，把我的雲端紀錄一起更新上去（有變才寫）
             if (document.getElementById('world-screen').style.display === 'flex') renderWorld();
         };
         lbInit();
