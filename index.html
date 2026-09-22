@@ -3,7 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="app-version" content="2026-09-22.1">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Who's Your Dad? 接爹地的小費</title>
+    <script>
+        // 主畫面捷徑（standalone WebView）常吃到舊快取：開場先比對伺服器上的版本號，
+        // 不同就強制重新載入頁面。只影響「要不要抓新版 HTML」，不會動到 localStorage 存檔。
+        (function () {
+            try {
+                var CUR = document.querySelector('meta[name="app-version"]').content;
+                var KEY = 'wyd_ver_checked_' + CUR;
+                if (sessionStorage.getItem(KEY)) return;   // 這個 session 已經比對過，避免一直 reload
+                sessionStorage.setItem(KEY, '1');
+                fetch(location.pathname + '?_v=' + Date.now(), { cache: 'no-store' })
+                    .then(function (r) { return r.text(); })
+                    .then(function (html) {
+                        var m = html.match(/<meta\s+name="app-version"\s+content="([^"]+)"/);
+                        var latest = m && m[1];
+                        if (latest && latest !== CUR) location.reload();
+                    })
+                    .catch(function () {});
+            } catch (e) {}
+        })();
+    </script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <style>
