@@ -1061,7 +1061,7 @@
         <div id="shop-screen">
             <h2>🛒 爹地的道具店</h2>
             <div class="shop-coins">你的金幣：<span id="shop-coin">0</span> 💰　<span class="lv-tip">（每局小費 $500 換 1 金幣）</span></div>
-            <div class="shop-note lv-tip">關卡開始前最多裝備 3 個消耗道具，用一局消耗一個；用了道具的那局不列入排行榜。賭城／運動會／復仇者／台灣不能用道具。</div>
+            <div class="shop-note lv-tip">關卡開始前最多裝備 3 個消耗道具，用一局消耗一個。任何模式都能用；用了道具的那局不列入排行榜。</div>
             <div id="shop-grid" class="shop-grid"></div>
             <button id="shop-close" class="small-btn">返回</button>
         </div>
@@ -4401,7 +4401,7 @@
         function newCasino() {
             ensureAudio();
             endless = false; trip = true; casinoTour = true; sportsDay = false; avengersDay = false; taiwanRun = false; singleRun = false;
-            resetRun(); tourPass = 0; applyLoadout(false);
+            resetRun(); tourPass = 0; applyLoadout(true);
             tripLevels = CASINO_IDS.map(id => COUNTRIES.find(c => c.id === id));
             tripStop = 1;
             showLevelIntro();
@@ -4410,7 +4410,7 @@
         function newSports() {
             ensureAudio();
             endless = false; trip = true; casinoTour = false; sportsDay = true; avengersDay = false; taiwanRun = false; singleRun = false;
-            resetRun(); tourPass = 0; applyLoadout(false);
+            resetRun(); tourPass = 0; applyLoadout(true);
             tripLevels = SPORTS.slice();
             tripStop = 1;
             showLevelIntro();
@@ -4419,7 +4419,7 @@
         function newAvengers() {
             ensureAudio();
             endless = false; trip = true; casinoTour = false; sportsDay = false; avengersDay = true; taiwanRun = false; singleRun = false;
-            resetRun(); tourPass = 0; applyLoadout(false);
+            resetRun(); tourPass = 0; applyLoadout(true);
             tripLevels = AVENGERS.slice();
             tripStop = 1;
             showLevelIntro();
@@ -4428,7 +4428,7 @@
         function newTaiwan() {
             ensureAudio();
             endless = false; trip = true; casinoTour = false; sportsDay = false; avengersDay = false; taiwanRun = true; singleRun = false;
-            resetRun(); tourPass = 0; applyLoadout(false);
+            resetRun(); tourPass = 0; applyLoadout(true);
             tripLevels = [TAIWAN];
             tripStop = 1;
             showLevelIntro();
@@ -4437,7 +4437,7 @@
         function newSingle(lv) {
             ensureAudio();
             endless = false; trip = true; casinoTour = false; sportsDay = false; avengersDay = false; taiwanRun = false; singleRun = true;
-            resetRun(); tourPass = 0; applyLoadout(false);
+            resetRun(); tourPass = 0; applyLoadout(true);
             tripLevels = [lv];
             tripStop = 1;
             showLevelIntro();
