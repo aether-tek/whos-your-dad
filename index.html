@@ -4649,10 +4649,13 @@
             const v = document.getElementById('ng-input').value.trim().slice(0, 20);
             if (!v) { toast('請先輸入名字'); return; }
             save('wyd_player', v);
+            const pulled = pullDownProgress();   // 立刻把雲端同名的成就/護照/特產拉下來合併（設定名字當下不會有新快照）
+            renderAchBtn(); renderPassportBtn();
             lbSync();
             document.getElementById('name-gate').style.display = 'none';
             updateWorldStatus();
             renderBests();
+            if (pulled) toast('已載入「' + v + '」在雲端的進度');
         }
         document.getElementById('ng-go').addEventListener('click', submitName);
         document.getElementById('ng-input').addEventListener('keydown', e => { if (e.key === 'Enter') submitName(); });
