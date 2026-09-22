@@ -3661,7 +3661,7 @@
             // 排行榜：用了道具的那局不列入排行榜；否則用進場名字自動上榜
             nameEntry.style.display = 'none';
             if (assisted) {
-                finalScore.innerHTML += `<br><span style="font-size:12px;color:#95a5a6">🛒 本局使用道具，不列入排行榜</span>`;
+                finalScore.innerHTML += `<br><span style="font-size:12px;color:#95a5a6">🛒 本局使用道具，不列入排行榜、技術成就不計（想解成就請不要裝備道具）</span>`;
                 renderBoard(overBoard, mode, -1);
             } else if (qualifies(mode, total)) {
                 const nm = (load('wyd_player', '') || '路人').slice(0, 20);
